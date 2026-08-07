@@ -1,0 +1,8 @@
+[
+  {"name": "membership_id",   "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "user_id",         "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "organization_id", "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "role",            "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "is_active",       "type": "BOOL",      "mode": "REQUIRED"},
+  {"name": "created_at",      "type": "TIMESTAMP", "mode": "NULLABLE"}
+]

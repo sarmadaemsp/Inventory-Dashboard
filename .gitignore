@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+.DS_Store
+Thumbs.db
+*.log
+dist/
+build/
+.clasp-creds.json
+# Atomic-write temp files (e.g. css/layout.css.tmp.34208.68902b3e44b2)
+*.tmp.*
+
+# Claude Code local-only state (may contain session tokens in allowlisted commands)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

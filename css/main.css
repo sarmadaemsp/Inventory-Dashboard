@@ -1,0 +1,151 @@
+/* ============================================================
+   main.css — Design tokens, global resets, base typography
+   ============================================================ */
+
+:root {
+  /* Background layers */
+  --bg:        #f1f5f9;
+  --surface:   #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+
+  /* Borders */
+  --border:   #e2e8f0;
+  --border-2: #cbd5e1;
+
+  /* Brand / Primary */
+  --primary:       #2563eb;
+  --primary-50:    #eff6ff;
+  --primary-100:   #dbeafe;
+  --primary-hover: #1d4ed8;
+  --primary-text:  #1e40af;
+
+  /* Semantic colors */
+  --success:    #16a34a;  --success-bg: #f0fdf4;  --success-bd: #bbf7d0;
+  --error:      #dc2626;  --error-bg:   #fef2f2;  --error-bd:   #fecaca;
+  --warning:    #d97706;  --warning-bg: #fffbeb;  --warning-bd: #fde68a;
+  --info:       #0891b2;  --info-bg:    #ecfeff;  --info-bd:    #a5f3fc;
+
+  /* Text scale */
+  --txt-1: #0f172a;
+  --txt-2: #334155;
+  --txt-3: #64748b;
+  --txt-4: #94a3b8;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow:    0 2px 8px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.10), 0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg: 0 10px 24px rgba(0,0,0,.10), 0 4px 8px rgba(0,0,0,.05);
+
+  /* Radius */
+  --r-xs:  4px;
+  --r-sm:  6px;
+  --r:     10px;
+  --r-lg:  14px;
+  --r-xl:  20px;
+
+  /* Layout */
+  --sidebar-w: 240px;
+  --topbar-h:  60px;
+
+  /* Typography
+     - --font-title  : Quicksand, used ONLY for page/section/card titles.
+     - --font-body   : Inter, the universal text font.
+     - --font-number : Inter, used for ALL numeric values and identifiers
+                       (KPI figures, table number cells, UIDs, UPCs, order IDs,
+                       part numbers) — even when they appear inside an element
+                       that visually reads as a title. Numbers must never be
+                       Quicksand. Set as a separate alias so the intent is
+                       obvious at every call site. */
+  --font-title:  'Quicksand', sans-serif;
+  --font-body:   'Inter', sans-serif;
+  --font-number: 'Inter', sans-serif;
+
+  /* Motion */
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --dur:  160ms;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background:  var(--bg);
+  color:       var(--txt-1);
+  line-height: 1.5;
+  min-height:  100vh;
+}
+
+/* ── Type ───────────────────────────────────────────────────── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+a { color: var(--primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code {
+  font-family: 'Courier New', monospace;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xs);
+  padding: 1px 5px;
+  font-size: 0.9em;
+}
+
+/* ── Inputs ─────────────────────────────────────────────────── */
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+input, select, textarea {
+  font-family: var(--font-body);
+  font-size: 14px;
+  outline: none;
+}
+
+table { border-collapse: collapse; width: 100%; }
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--surface-2); }
+::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--txt-4); }
+
+/* ── Utility helpers ────────────────────────────────────────── */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

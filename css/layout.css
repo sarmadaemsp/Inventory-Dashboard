@@ -1,0 +1,746 @@
+/* ============================================================
+   layout.css — App shell: loading screen, login, sidebar,
+                topbar, main content wrapper, page areas
+   ============================================================ */
+
+/* ── Initial loading screen ─────────────────────────────────── */
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  gap: 16px;
+}
+
+.load-text {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt-3);
+}
+
+/* ── Login / auth screens ───────────────────────────────────── */
+#login-screen,
+#org-selector-screen {
+  min-height: 100vh;
+  width: 100vw;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.login-card {
+  background:    var(--surface);
+  border:        1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow:    var(--shadow-lg);
+  padding:       40px 44px;
+  width:         100%;
+  max-width:     400px;
+  animation: slideUp .25s var(--ease);
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.login-brand-name { font-family: var(--font-title); font-size: 17px; font-weight: 700; color: var(--txt-1); }
+.login-brand-sub  { font-size: 11px; color: var(--txt-4); margin-top: 1px; }
+
+.login-heading { font-size: 20px; margin-bottom: 6px; }
+.login-sub     { font-size: 13px; color: var(--txt-3); margin-bottom: 24px; }
+
+.login-error {
+  font-size: 12px;
+  color: var(--error);
+  background: var(--error-bg);
+  border: 1px solid var(--error-bd);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  display: none;
+}
+.login-error.visible { display: block; }
+
+/* ── App shell ──────────────────────────────────────────────── */
+#app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Sidebar ────────────────────────────────────────────────── */
+.sidebar {
+  width:     var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0; top: 0; bottom: 0;
+  z-index: 100;
+  overflow: hidden;
+  transition: width 220ms var(--ease), min-width 220ms var(--ease);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Left padding (20px) matches the nav row inner edge:
+     sidebar-nav padding-left (8) + nav-item padding-left (12) = 20.
+     The "MENU" label therefore lines up vertically with each
+     nav item's icon below it. */
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  height: var(--topbar-h);
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Expand button — hidden when expanded, shown (centered) when collapsed.
+   Acts as the click target to re-expand the sidebar in collapsed state. */
+.sidebar-expand-btn {
+  width: 36px; height: 36px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--txt-2);
+  padding: 0;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.sidebar-expand-btn:hover { background: var(--primary-50); color: var(--primary-text); }
+.sidebar-expand-btn:active { transform: scale(.95); }
+.sidebar-expand-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* "Menu" label shown in expanded state in place of the old brand text */
+.sidebar-menu-label {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--txt-3);
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 160ms var(--ease), max-width 220ms var(--ease);
+}
+
+/* ── Sidebar toggle button ──────────────────────────────────── */
+.sidebar-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--txt-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+.sidebar-toggle:hover { background: var(--primary-50); color: var(--primary-text); }
+.sidebar-toggle:active { transform: scale(.95); }
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--txt-3);
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  white-space: nowrap;
+  transition: background var(--dur), color var(--dur), padding var(--dur), justify-content var(--dur);
+}
+.nav-item:hover  { background: var(--surface-3); color: var(--txt-1); }
+.nav-item.active { background: var(--primary-50); color: var(--primary-text); font-weight: 600; }
+
+.nav-label {
+  overflow: hidden;
+  transition: opacity 160ms var(--ease), max-width 220ms var(--ease);
+  max-width: 160px;
+}
+
+.nav-icon {
+  font-size: 16px;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: .7;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+
+/* ── Collapsed sidebar ──────────────────────────────────────── */
+body.sidebar-collapsed .sidebar         { width: 64px; min-width: 64px; }
+body.sidebar-collapsed .main-wrapper   { margin-left: 64px; }
+
+body.sidebar-collapsed .sidebar-header      { padding: 13px 0; justify-content: center; gap: 0; }
+body.sidebar-collapsed .sidebar-menu-label  { opacity: 0; max-width: 0; }
+body.sidebar-collapsed .sidebar-toggle      { display: none; }
+body.sidebar-collapsed .sidebar-expand-btn  { display: flex; }
+
+body.sidebar-collapsed .sidebar-nav    { padding: 10px 6px; }
+body.sidebar-collapsed .nav-item       { justify-content: center; padding: 10px 0; }
+body.sidebar-collapsed .nav-label      { opacity: 0; max-width: 0; }
+body.sidebar-collapsed .nav-icon       { opacity: .8; width: 20px; }
+body.sidebar-collapsed .nav-item.active .nav-icon { opacity: 1; }
+
+/* Tooltip on hover in collapsed state */
+body.sidebar-collapsed .nav-item::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--txt-1);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms var(--ease);
+  z-index: 500;
+}
+body.sidebar-collapsed .nav-item:hover::after { opacity: 1; }
+
+/* Footer in collapsed state */
+body.sidebar-collapsed .sidebar-footer      { padding: 12px 4px; }
+body.sidebar-collapsed .sidebar-user        { justify-content: center; padding: 8px 0; }
+body.sidebar-collapsed .sidebar-user-info   { display: none; }
+/* Sign out collapses to icon-only and stays visible — same treatment as
+   the nav items above (.nav-item rules drive the label hide + tooltip). */
+body.sidebar-collapsed .sidebar-logout      { justify-content: center; padding: 10px 0; }
+
+
+.sidebar-footer {
+  padding: 12px 8px;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  margin-bottom: 4px;
+}
+
+.sidebar-avatar,
+.user-avatar-sm {
+  width: 30px; height: 30px;
+  background: var(--primary-100);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px; font-weight: 700;
+  color: var(--primary-text);
+  flex-shrink: 0;
+}
+
+.sidebar-user-name { font-size: 13px; font-weight: 600; color: var(--txt-1); line-height: 1.2; }
+.sidebar-user-role { font-size: 11px; color: var(--txt-4); text-transform: capitalize; }
+
+/* Sign out — reuses .nav-item styling so it aligns visually with the
+   sidebar's main nav, but it's a <button>. Reset native button defaults
+   and add a destructive-tint hover so it reads as a separate action. */
+button.nav-item.sidebar-logout {
+  width: 100%;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-family: inherit;
+  margin-top: 4px;
+}
+button.nav-item.sidebar-logout:hover {
+  background: var(--error-50, #fef2f2);
+  color: var(--error, #dc2626);
+}
+button.nav-item.sidebar-logout:hover .nav-icon { opacity: 1; color: var(--error, #dc2626); }
+button.nav-item.sidebar-logout:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Main wrapper ───────────────────────────────────────────── */
+.main-wrapper {
+  flex: 1;
+  margin-left: var(--sidebar-w);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  transition: margin-left 220ms var(--ease);
+}
+
+/* ── Topbar ─────────────────────────────────────────────────── */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--txt-1);
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Mobile-only hamburger button in topbar — hidden on desktop/tablet. */
+.topbar-menu-btn {
+  display: none;
+  width: 36px; height: 36px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--surface-3);
+  color: var(--txt-2);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.topbar-menu-btn:hover { background: var(--primary-50); color: var(--primary-text); }
+.topbar-menu-btn:active { transform: scale(.95); }
+
+/* ── Sidebar backdrop (mobile offcanvas) ────────────────────── */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .45);
+  z-index: 99;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms var(--ease), visibility 0s linear 220ms;
+}
+body.sidebar-mobile-open .sidebar-backdrop {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 220ms var(--ease);
+}
+
+/* ── Page content ───────────────────────────────────────────── */
+.page-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.page        { display: none; }
+.page.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  animation: fadeIn .18s var(--ease);
+}
+/* Standard pages scroll with padding — excludes pages with custom internal layout */
+.page.active:not(#page-dashboard):not(#page-box-lookup):not(#page-uploads):not(#page-settings):not(#page-inventory):not(#page-orders) {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* ── Settings page layout ───────────────────────────────────── */
+#page-settings { overflow: hidden; }
+
+.settings-sticky {
+  flex-shrink: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 24px 0;
+}
+.settings-sticky .section-header { margin-bottom: 14px; }
+
+/* Body is a flex column — tab panels fill it and scroll themselves */
+.settings-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 24px 24px;
+}
+
+/* Every active settings tab panel fills remaining height and scrolls */
+#page-settings .tab-panel.active {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Logs tab: panel itself does NOT scroll — only the content area inside does */
+#page-settings #tab-logs.tab-panel.active {
+  overflow: hidden;
+}
+
+/* System Status tab: same viewport-fit pattern as Inventory / Orders.
+   The tab-panel doesn't scroll; the card fills it and the inner content
+   region scrolls internally if the diagnostics rows overflow. Keeps the
+   page free of an outer scrollbar regardless of admin tooling height. */
+#page-settings #tab-system.tab-panel.active {
+  overflow: hidden;
+}
+#tab-system > .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#tab-system > .card > .card-header { flex-shrink: 0; }
+/* Flex column so the admin-ops panel below can grow to fill the
+   remaining height, and the terminal inside can be flex-sized
+   without the outer container ever needing to scroll. */
+#tab-system #system-status-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#tab-system #system-status-content > .admin-ops-panel { flex: 1; min-height: 0; }
+
+.settings-logs-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Logs content: fills remaining card space and scrolls */
+.settings-logs-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+#logs-pagination { flex-shrink: 0; }
+
+/* ── Inventory + Orders: viewport-fit table pages ───────────── */
+#page-inventory,
+#page-orders {
+  overflow: hidden;
+  padding: 16px;
+}
+
+/* Card fills remaining height as a flex column */
+#page-inventory > .card,
+#page-orders > .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Filter bar and delete bar never shrink */
+#page-inventory .filter-bar,
+#page-orders .filter-bar,
+#inv-delete-bar { flex-shrink: 0; }
+
+/* Table wrap fills remaining space and scrolls vertically */
+#page-inventory .table-wrap,
+#page-orders .table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Pagination stays pinned at the bottom */
+#page-inventory .pagination,
+#page-orders .pagination { flex-shrink: 0; }
+
+/* ── Box Lookup dedicated page ──────────────────────────────── */
+#page-box-lookup { overflow: hidden; }
+
+.blookup-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+
+.blookup-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.blookup-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  gap: 16px;
+  text-align: center;
+  color: var(--txt-4);
+}
+.blookup-empty-icon { opacity: .35; margin-bottom: 4px; }
+.blookup-empty-title { font-size: 15px; font-weight: 600; color: var(--txt-3); }
+.blookup-empty-sub { font-size: 13px; color: var(--txt-4); max-width: 320px; }
+
+/* ── Uploads page ───────────────────────────────────────────── */
+#page-uploads { overflow: hidden; }
+
+.uploads-top {
+  flex-shrink: 0;
+  padding: 18px 24px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Upload History uses the same viewport-fit flex pattern as Inventory /
+   Orders: the card becomes a flex column, the filter-bar sits at the top
+   without scrolling, and only the table-wrap scrolls. This avoids the
+   sticky-positioning quirks (transparent rows bleeding through, etc.)
+   that previously appeared with a sticky filter-bar inside a scroll
+   container. */
+.uploads-history {
+  flex: 1;
+  overflow: hidden;
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.uploads-history > .card-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.uploads-history > .card-table > .filter-bar { flex-shrink: 0; }
+.uploads-history > .card-table > .table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Sticky table headers across scrollable page sections.
+   Settings tabs + Box Lookup still use a page-level scroll container, so
+   their table-wraps need overflow:visible to let <thead> stick to the
+   outer scrollbox. Uploads now scrolls inside .table-wrap itself, so it
+   keeps the default overflow. */
+#page-settings .tab-panel .table-wrap,
+.blookup-body .table-wrap {
+  overflow: visible;
+}
+
+/* ── Section header ─────────────────────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 12px;
+}
+
+.section-title   { font-family: var(--font-title); font-size: 20px; font-weight: 700; color: var(--txt-1); }
+.section-sub     { font-size: 13px; color: var(--txt-3); margin-top: 3px; }
+.section-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ──────────────────────────────────────────────────────────────
+   Responsive
+   ─────────────────────────────────────────────────────────────
+   Strategy:
+   - Desktop  (>1024px): viewport-fit layout (no main page scroll —
+     only tables, charts, and content regions scroll internally).
+   - Tablet   (≤1024px): main wrapper scrolls; pages and inner
+     regions revert to natural page flow. Sidebar still inline.
+   - Mobile   (≤768px):  sidebar becomes off-canvas with backdrop.
+                         Hamburger button in the topbar opens it.
+   - Small    (≤480px):  tighter paddings and stacked elements.
+   ────────────────────────────────────────────────────────────── */
+
+/* ── Tablet & below: allow main page to scroll ──────────────── */
+@media (max-width: 1024px) {
+  #app-shell {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .main-wrapper {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+  .page-content {
+    overflow: visible;
+    flex: 1 1 auto;
+  }
+  .page.active {
+    overflow: visible;
+    flex: 1 1 auto;
+  }
+
+  /* Pages with custom viewport-fit flex layout revert to natural flow */
+  #page-dashboard,
+  #page-box-lookup,
+  #page-uploads,
+  #page-settings,
+  #page-inventory,
+  #page-orders { overflow: visible; }
+
+  /* Internal scroll regions release their scroll on tablet — page scrolls instead */
+  .dash-charts-area,
+  .blookup-body,
+  .uploads-history,
+  #page-settings .tab-panel.active,
+  .settings-logs-content {
+    overflow: visible;
+    flex: 0 0 auto;
+  }
+
+  /* Tables still scroll horizontally when they overflow */
+  #page-inventory .table-wrap,
+  #page-orders .table-wrap,
+  .uploads-history .table-wrap {
+    flex: 0 0 auto;
+    overflow-x: auto;
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  /* Settings tab content stops being a viewport-fit flex column */
+  .settings-body { flex: 0 0 auto; }
+  .settings-logs-card { min-height: 0; }
+
+  /* Topbar no longer needs to be sticky inside a fixed shell */
+  .topbar { position: sticky; top: 0; }
+
+  /* Padding trims for denser content */
+  #page-inventory,
+  #page-orders { padding: 14px; }
+  .uploads-top { padding: 14px 16px 12px; }
+  .uploads-history { padding: 12px 16px 16px; }
+  .blookup-search { padding: 10px 16px; }
+  .blookup-body { padding: 16px; }
+  .settings-sticky { padding: 14px 16px 0; }
+  .settings-body { padding: 14px 16px 16px; }
+}
+
+/* ── Mobile: off-canvas sidebar with backdrop ───────────────── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; --topbar-h: 56px; }
+
+  /* Sidebar slides off-screen by default; opens via .sidebar-mobile-open */
+  .sidebar {
+    width: 260px;
+    min-width: 260px;
+    transform: translateX(-100%);
+    transition: transform 240ms var(--ease);
+    z-index: 1000;
+  }
+  body.sidebar-mobile-open .sidebar { transform: translateX(0); }
+
+  /* Always show expanded sidebar contents in the off-canvas view */
+  body.sidebar-collapsed .sidebar { width: 260px; min-width: 260px; }
+  body.sidebar-collapsed .sidebar-header      { padding: 14px 16px; justify-content: flex-start; gap: 10px; }
+  body.sidebar-collapsed .sidebar-toggle      { display: none; }
+  body.sidebar-collapsed .sidebar-expand-btn  { display: none; }
+  body.sidebar-collapsed .sidebar-menu-label  { opacity: 1; max-width: none; }
+  body.sidebar-collapsed .sidebar-nav        { padding: 10px 8px; }
+  body.sidebar-collapsed .nav-item           { justify-content: flex-start; padding: 9px 12px; }
+  body.sidebar-collapsed .nav-label          { opacity: 1; max-width: none; }
+  body.sidebar-collapsed .sidebar-user-info  { display: block; }
+  body.sidebar-collapsed .sidebar-logout     { justify-content: flex-start; padding: 9px 12px; }
+
+  /* In off-canvas mode the in-sidebar toggle hides — topbar hamburger handles open. */
+  .sidebar-toggle { display: none; }
+
+  /* Main wrapper now occupies full width */
+  .main-wrapper { margin-left: 0; }
+  body.sidebar-collapsed .main-wrapper { margin-left: 0; }
+
+  /* Topbar hamburger appears */
+  .topbar-menu-btn { display: flex; }
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar-title { font-size: 16px; }
+
+  /* Tighter page paddings */
+  #page-inventory,
+  #page-orders { padding: 10px; }
+  .uploads-top { padding: 12px; }
+  .uploads-history { padding: 10px 12px 14px; }
+  .blookup-search { padding: 10px 12px; }
+  .blookup-body { padding: 12px; }
+  .settings-sticky { padding: 12px 12px 0; }
+  .settings-body { padding: 12px; }
+}
+
+/* ── Small mobile: tightest layout ──────────────────────────── */
+@media (max-width: 480px) {
+  :root { --topbar-h: 52px; }
+  .topbar { padding: 0 10px; gap: 8px; }
+  .topbar-title { font-size: 15px; }
+  .topbar-actions { gap: 6px; }
+  .login-card { padding: 28px 22px; }
+  .section-title { font-size: 18px; }
+}

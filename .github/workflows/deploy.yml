@@ -1,0 +1,42 @@
+name: Deploy to Apps Script
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Push & Deploy via clasp
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Write clasp credentials
+        # CLASPRC_JSON must contain the full ~/.clasprc.json content as a GitHub Secret
+        run: |
+          mkdir -p ~/.config/configstore
+          echo '${{ secrets.CLASPRC_JSON }}' > ~/.clasprc.json
+
+      - name: Push code to Apps Script
+        run: npx clasp push --force
+
+      - name: Deploy new version
+        run: |
+          npx clasp deploy \
+            --deploymentId "${{ secrets.DEPLOYMENT_ID }}" \
+            --description "Auto-deploy from ${{ github.sha }} on $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+      - name: Verify deployment
+        run: npx clasp deployments

@@ -1,0 +1,192 @@
+/* ============================================================
+   tables.css — Data tables, filter bars, pagination
+   ============================================================ */
+
+/* ── Table wrapper ──────────────────────────────────────────── */
+.table-wrap {
+  overflow-x: auto;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+}
+
+/* ── Data table ─────────────────────────────────────────────── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table thead th {
+  background: var(--surface-2);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--txt-3);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  user-select: none;
+  /* Stick to the top of the scrollable .table-wrap when the body scrolls.
+     border-bottom doesn't render on sticky cells in some browsers — we use
+     box-shadow as a fallback divider that paints over the scrolling rows. */
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+
+/* Sortable column indicator */
+.data-table thead th.sortable { cursor: pointer; }
+.data-table thead th.sortable:hover { color: var(--txt-1); }
+.data-table thead th.sort-asc::after  { content: ' ↑'; color: var(--primary); }
+.data-table thead th.sort-desc::after { content: ' ↓'; color: var(--primary); }
+
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--dur);
+}
+.data-table tbody tr:last-child { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--surface-2); }
+
+.data-table tbody td {
+  padding: 10px 14px;
+  color: var(--txt-2);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.data-table tbody td.wrap { white-space: normal; word-break: break-word; }
+
+/* Numeric column — right-aligned by default + always rendered in Inter
+   (--font-number) with tabular figures so digits column-align across rows.
+   Quicksand is reserved for titles only — numbers are always Inter. */
+.data-table td.num, .data-table th.num { text-align: right; }
+.data-table td.num                     { font-family: var(--font-number); font-variant-numeric: tabular-nums; }
+
+/* Identifier chips (UIDs, order IDs, UPCs, part numbers) always use Inter
+   with tabular figures so digits column-align — overrides any inline
+   monospace styling that may still ship in older JS templates. */
+.row-uid,
+.data-table .id-cell,
+.data-table .mono-cell {
+  font-family: var(--font-number) !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+
+/* Stock coloring */
+.stock-positive { color: var(--success); font-weight: 600; }
+.stock-zero     { color: var(--error);   font-weight: 600; }
+.stock-low      { color: var(--warning); font-weight: 600; }
+
+/* Row flags */
+.row-undef td:first-child { border-left: 3px solid var(--warning); }
+.row-error td:first-child { border-left: 3px solid var(--error);   }
+
+/* Phantom row — unified across all operational tables */
+.data-table tbody tr.row-phantom         { background: rgba(220, 38, 38, 0.05); }
+.data-table tbody tr.row-phantom:hover   { background: rgba(220, 38, 38, 0.09); }
+
+/* Unknown SKU row — order SKU not found in inventory */
+.data-table tbody tr.row-unknown         { background: rgba(220, 38, 38, 0.05); }
+.data-table tbody tr.row-unknown:hover   { background: rgba(220, 38, 38, 0.09); }
+
+/* Fulfillment override row (same part, different box) */
+.data-table tbody tr.row-override         { background: rgba(254, 216, 181, 0.22); }
+.data-table tbody tr.row-override:hover   { background: rgba(254, 216, 181, 0.30); }
+.data-table tbody tr.row-override td:first-child { border-left: 3px solid #d97706; }
+
+/* Wrong-part shipping row (operator shipped a different part/UPC entirely) */
+.data-table tbody tr.row-wrong-part         { background: rgba(220, 38, 38, 0.08); }
+.data-table tbody tr.row-wrong-part:hover   { background: rgba(220, 38, 38, 0.12); }
+.data-table tbody tr.row-wrong-part td:first-child { border-left: 3px solid #b91c1c; }
+
+/* SKU View — one row per SKU, click to expand raw rows below */
+.data-table tbody tr.sku-row { cursor: pointer; transition: background .12s; }
+.data-table tbody tr.sku-row:hover { background: rgba(37, 99, 235, .04); }
+.data-table tbody tr.sku-row--phantom        { background: rgba(220, 38, 38, .05); }
+.data-table tbody tr.sku-row--phantom:hover  { background: rgba(220, 38, 38, .09); }
+.data-table tbody tr.sku-row--phantom td:first-child { border-left: 3px solid #dc2626; }
+.data-table tbody tr.sku-row--oos td:first-child     { border-left: 3px solid #94a3b8; }
+.data-table tbody tr.sku-row--undef           { background: rgba(234, 179, 8, .06); }
+.data-table tbody tr.sku-row--undef:hover     { background: rgba(234, 179, 8, .10); }
+.data-table tbody tr.sku-row--undef td:first-child   { border-left: 3px solid #ca8a04; }
+.data-table tbody tr.sku-drill-row td { padding: 0 }
+.data-table tbody tr.sku-drill-row:hover { background: inherit; }
+
+/* ── Compact card table (inside card with no extra border) ─── */
+.card-table .data-table thead th:first-child,
+.card-table .data-table tbody td:first-child { padding-left: 20px; }
+.card-table .data-table thead th:last-child,
+.card-table .data-table tbody td:last-child  { padding-right: 20px; }
+
+/* ── Filter bar ─────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+}
+@media (max-width: 640px) {
+  .filter-bar {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  /* Let inputs/selects with fixed inline widths shrink + grow naturally */
+  .filter-bar .form-input,
+  .filter-bar .form-select { min-width: 0; }
+  .filter-bar .form-input[type="date"] { flex: 1 1 130px; width: auto !important; }
+  .filter-bar .form-select { flex: 1 1 140px; width: auto !important; }
+  .filter-bar > div[style*="position:relative"] { flex: 1 1 100%; min-width: 0; }
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+  .pagination { padding: 10px 12px; }
+  .pagination-info { flex: 1 1 100%; text-align: center; order: 2; }
+  .pagination > div { order: 1; margin: 0 auto; }
+}
+
+.pagination-info { font-size: 12px; color: var(--txt-3); }
+
+.page-controls { display: flex; gap: 4px; align-items: center; }
+
+.page-btn {
+  width: 30px; height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-xs);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--txt-3);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--dur), color var(--dur);
+  user-select: none;
+}
+.page-btn:hover:not([disabled]) { background: var(--surface-3); color: var(--txt-1); }
+.page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 600; }
+.page-btn[disabled] { opacity: .4; cursor: not-allowed; }
+.page-sep { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: var(--txt-4); font-size: 12px; }
+
+/* ── Upload history table status ───────────────────────────── */
+.upload-status-success    { color: var(--success); font-weight: 600; }
+.upload-status-failed,
+.upload-status-error      { color: var(--error);   font-weight: 600; }
+.upload-status-processing { color: var(--warning); font-weight: 600; }

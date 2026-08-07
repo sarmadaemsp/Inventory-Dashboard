@@ -1,0 +1,3 @@
+sku,upc,part_number,box_number,quantity,date_added,notes
+SKU-001,001234567890,PT-123,BX-001,25,2026-05-11,Sample item
+SKU-002,001234567891,,BX-002,100,2026-05-11,

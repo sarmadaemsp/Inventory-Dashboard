@@ -1,0 +1,721 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventory Dashboard</title>
+
+  <!-- CSS â€” v=56: bump on every deploy to bust browser/CDN cache -->
+  <link rel="stylesheet" href="css/main.css?v=112">
+  <link rel="stylesheet" href="css/layout.css?v=112">
+  <link rel="stylesheet" href="css/components.css?v=112">
+  <link rel="stylesheet" href="css/tables.css?v=112">
+  <link rel="stylesheet" href="css/forms.css?v=112">
+  <link rel="stylesheet" href="css/animations.css?v=112">
+
+  <!-- Favicon: Lucide "package" icon in brand blue -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E">
+</head>
+<body>
+
+  <!-- â”€â”€ Loading Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <div id="loading-screen">
+    <div class="load-text">Loading Dashboard&hellip;</div>
+    <div class="spin" style="margin-top:8px"></div>
+  </div>
+
+  <!-- â”€â”€ Org Selector Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <div id="org-selector-screen" style="display:none">
+    <div class="login-card">
+      <div class="login-brand">
+        <div>
+          <div class="login-brand-name">Inventory Dashboard</div>
+          <div class="login-brand-sub" id="org-selector-user-name">&mdash;</div>
+        </div>
+      </div>
+      <h1 class="login-heading">Select Workspace</h1>
+      <p class="login-sub">You have access to multiple workspaces. Choose one to continue.</p>
+      <div id="org-list" style="margin-top:8px"></div>
+      <div id="org-selector-error" class="login-error" style="margin-top:8px"></div>
+      <button id="org-selector-back" class="btn btn-ghost btn-sm" style="margin-top:12px;width:100%">&larr; Back to sign in</button>
+    </div>
+  </div>
+
+  <!-- â”€â”€ Login Screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <div id="login-screen" style="display:none">
+    <div class="login-card">
+      <div class="login-brand">
+        <div>
+          <div class="login-brand-name">Inventory Dashboard</div>
+          <div class="login-brand-sub">Inventory Management System</div>
+        </div>
+      </div>
+
+      <h1 class="login-heading">Sign in</h1>
+      <p class="login-sub">Enter your username and password to continue</p>
+
+      <div id="login-error" class="login-error"></div>
+
+      <form id="login-form" autocomplete="on">
+        <div class="form-group">
+          <label class="form-label" for="login-username">Username</label>
+          <input class="form-input" id="login-username" type="text" placeholder="username" autocomplete="username" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="login-password">Password</label>
+          <input class="form-input" id="login-password" type="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password" required>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:-8px 0 16px 0">
+          <label for="login-remember" style="margin:0;font-size:13px;color:var(--txt-3);cursor:pointer;user-select:none;line-height:1">
+            Remember this device
+          </label>
+          <input type="checkbox" id="login-remember" style="margin:0;width:14px;height:14px;cursor:pointer;flex-shrink:0">
+        </div>
+        <button class="btn btn-primary btn-wide btn-lg" id="login-btn" type="submit">Sign in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- â”€â”€ App Shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+  <div id="app-shell" style="display:none">
+
+    <!-- Sidebar backdrop (mobile offcanvas) -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <button class="sidebar-expand-btn" id="sidebar-expand-btn" title="Expand sidebar" aria-label="Expand sidebar" type="button">
+          <i data-lucide="menu" class="icon" style="width:18px;height:18px"></i>
+        </button>
+        <div class="sidebar-menu-label">Menu</div>
+        <button class="sidebar-toggle" id="sidebar-toggle" title="Collapse sidebar" aria-label="Collapse sidebar" type="button">
+          <i data-lucide="panel-left-close" class="icon" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-item active" data-page="dashboard" data-min-role="manager" data-tooltip="Dashboard">
+          <span class="nav-icon"><i data-lucide="layout-dashboard" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">Dashboard</span>
+        </div>
+        <div class="nav-item" data-page="box-lookup" data-tooltip="Box Lookup">
+          <span class="nav-icon"><i data-lucide="search" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">Box Lookup</span>
+        </div>
+        <div class="nav-item" data-page="inventory" data-min-role="manager" data-tooltip="SKU View">
+          <span class="nav-icon"><i data-lucide="package" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">SKU View</span>
+        </div>
+        <div class="nav-item" data-page="orders" data-min-role="manager" data-tooltip="Orders">
+          <span class="nav-icon"><i data-lucide="shopping-cart" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">Orders</span>
+        </div>
+        <div class="nav-item" data-page="uploads" data-min-role="manager" data-tooltip="Uploads">
+          <span class="nav-icon"><i data-lucide="upload" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">Uploads</span>
+        </div>
+        <div class="nav-item" data-page="settings" data-min-role="admin" data-tooltip="Settings">
+          <span class="nav-icon"><i data-lucide="settings" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">Settings</span>
+        </div>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">?</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">Loading&hellip;</div>
+            <div class="sidebar-user-role">&mdash;</div>
+          </div>
+        </div>
+        <button type="button" class="nav-item sidebar-logout" id="logout-btn" data-tooltip="Sign out" aria-label="Sign out">
+          <span class="nav-icon"><i data-lucide="log-out" class="icon" style="width:18px;height:18px"></i></span>
+          <span class="nav-label">Sign out</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main wrapper -->
+    <div class="main-wrapper">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="topbar-menu-btn" id="topbar-menu-btn" title="Open menu" aria-label="Open menu" type="button">
+          <i data-lucide="menu" class="icon" style="width:18px;height:18px"></i>
+        </button>
+        <div id="topbar-title" class="topbar-title">Dashboard</div>
+        <div class="topbar-actions">
+          <!-- Org switcher â€” hidden when user has only one org -->
+          <div id="org-switcher" class="org-switcher" style="display:none">
+            <button type="button" id="org-switcher-trigger" class="org-switcher-trigger" aria-haspopup="listbox" aria-expanded="false">
+              <i data-lucide="building-2" class="icon org-switcher-icon" aria-hidden="true"></i>
+              <span id="current-org-name" class="org-switcher-name">&mdash;</span>
+              <i data-lucide="chevron-down" class="icon org-switcher-chevron" aria-hidden="true"></i>
+            </button>
+            <div id="org-switcher-dropdown" class="org-switcher-dropdown" role="listbox"></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page content -->
+      <main class="page-content">
+
+        <!-- â”€â”€ Dashboard page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div id="page-dashboard" class="page active">
+
+          <!-- KPI Cards: 2 intelligence panels (50% width each) -->
+          <div class="dash-kpi-area" id="dash-kpi-area">
+            <div class="dash-2cards">
+
+              <!-- Card 1: Inventory Intelligence -->
+              <div class="kpi-card kpi-card--inventory" data-navigate="inventory" role="button" tabindex="0" aria-label="Open inventory">
+                <div class="kpi-card-head">
+                  <div class="kpi-card-head-icon">
+                    <i data-lucide="package" class="icon" style="width:18px;height:18px"></i>
+                  </div>
+                  <div class="kpi-card-head-text">
+                    <div class="kpi-card-main">
+                      <span class="kpi-card-label">Total SKUs</span>
+                      <span class="kpi-card-value" id="kpi-total-skus">—</span>
+                    </div>
+                  </div>
+                  <span class="kpi-card-arrow" aria-hidden="true">
+                    <i data-lucide="arrow-up-right" class="icon" style="width:16px;height:16px"></i>
+                  </span>
+                </div>
+
+                <div class="kpi-card-subs">
+                  <div class="kpi-sub-group" data-tone="ok">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>In Stock SKUs</div>
+                    <div class="kpi-sub-value green" id="kpi-instock-skus">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="warn">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>OOS SKUs</div>
+                    <div class="kpi-sub-value" id="kpi-oos-skus">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="error">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Undefined SKUs</div>
+                    <div class="kpi-sub-value" id="kpi-undef-skus">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="neutral">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Total Units</div>
+                    <div class="kpi-sub-value" id="kpi-total-units">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="ok">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Remaining Units</div>
+                    <div class="kpi-sub-value green" id="kpi-remaining">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Card 2: Sales Intelligence -->
+              <div class="kpi-card kpi-card--sales" data-navigate="orders" role="button" tabindex="0" aria-label="Open orders">
+                <div class="kpi-card-head">
+                  <div class="kpi-card-head-icon">
+                    <i data-lucide="shopping-cart" class="icon" style="width:18px;height:18px"></i>
+                  </div>
+                  <div class="kpi-card-head-text">
+                    <div class="kpi-card-main">
+                      <span class="kpi-card-label">Total Orders</span>
+                      <span class="kpi-card-value" id="kpi-total-orders">—</span>
+                    </div>
+                  </div>
+                  <span class="kpi-card-arrow" aria-hidden="true">
+                    <i data-lucide="arrow-up-right" class="icon" style="width:16px;height:16px"></i>
+                  </span>
+                </div>
+
+                <div class="kpi-card-subs">
+                  <div class="kpi-sub-group" data-tone="neutral">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Units Sold</div>
+                    <div class="kpi-sub-value" id="kpi-orders-units-sold">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="warn">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Phantom Units</div>
+                    <div class="kpi-sub-value" id="kpi-phantom">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="ok">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Fulfilled Units</div>
+                    <div class="kpi-sub-value teal" id="kpi-fulfilled">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="error">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Shipped Wrong Part#</div>
+                    <div class="kpi-sub-value" id="kpi-wrong-part">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="error">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Unknown Orders</div>
+                    <div class="kpi-sub-value" id="kpi-unknown-orders">—</div>
+                  </div>
+                  <div class="kpi-sub-group" data-tone="error">
+                    <div class="kpi-sub-label"><span class="kpi-dot" aria-hidden="true"></span>Unknown Units Sold</div>
+                    <div class="kpi-sub-value" id="kpi-unknown-units">—</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Analytics filter toolbar -->
+          <div class="dash-filter-bar">
+            <span class="dash-filter-label">Analytics</span>
+            <div class="dash-mode-toggle">
+              <button class="dash-mode-btn active" id="dash-mode-wow">WoW</button>
+              <button class="dash-mode-btn" id="dash-mode-mom">MoM</button>
+            </div>
+            <select class="form-select" id="dash-range-select" style="width:auto;font-size:12px;padding:5px 10px"></select>
+            <select class="form-select" id="dash-platform-select" style="width:auto;font-size:12px;padding:5px 10px">
+              <option value="">All Platforms</option>
+            </select>
+          </div>
+
+          <!-- Charts area â€” scrollable, fills remaining height -->
+          <div class="dash-charts-area" id="dash-charts-container">
+
+            <!-- Trend chart â€” full width, title updates with WoW/MoM mode -->
+            <div class="card" style="margin-bottom:14px">
+              <div class="card-header"><div class="card-title" id="chart-trend-title">Weekly Sales</div></div>
+              <div class="chart-wrap"><canvas id="chart-weekly"></canvas></div>
+            </div>
+
+            <!-- Sales by Platform â€” full width -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">Sales by Platform</div></div>
+              <div class="dash-platform-body">
+                <div class="dash-platform-doughnut"><canvas id="chart-platform"></canvas></div>
+                <div id="platform-legend" class="dash-platform-legend"></div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- â”€â”€ Box Lookup page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div id="page-box-lookup" class="page">
+
+          <!-- Sticky search bar -->
+          <div class="blookup-search">
+            <div style="position:relative;flex:1;min-width:200px">
+              <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txt-4);pointer-events:none;display:flex;align-items:center">
+                <i data-lucide="search" class="icon" style="width:14px;height:14px"></i>
+              </span>
+              <input class="form-input search-input" id="box-search-input"
+                placeholder="Search by Part # or UPC&hellip;" autocomplete="off" style="padding-left:34px">
+            </div>
+            <button class="btn btn-ghost btn-sm" id="box-clear-btn" style="display:none">
+              <i data-lucide="x" class="icon" style="width:13px;height:13px"></i> Clear
+            </button>
+          </div>
+
+          <!-- Tabs + results area -->
+          <div class="blookup-body">
+            <div id="lookup-tabs" style="display:none;margin-bottom:14px">
+              <div style="display:flex;gap:0;border-bottom:2px solid var(--border)">
+                <button class="lookup-tab active" data-tab="instock" style="padding:8px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-2px">In Stock</button>
+                <button class="lookup-tab" data-tab="all" style="padding:8px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--txt-3)">All Boxes</button>
+              </div>
+            </div>
+            <div id="lookup-instock">
+              <div class="blookup-empty">
+                <div class="blookup-empty-icon">
+                  <i data-lucide="search" class="icon" style="width:48px;height:48px"></i>
+                </div>
+                <div class="blookup-empty-title">Search your inventory</div>
+                <div class="blookup-empty-sub">Enter a Part Number or UPC above to view inventory allocation across boxes</div>
+              </div>
+            </div>
+            <div id="lookup-all" style="display:none"></div>
+          </div>
+
+        </div>
+
+        <!-- â”€â”€ SKU View page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <!-- Canonical SKU-aggregated inventory page. One row per SKU, powered
+             by the same metrics engine that drives dashboard KPIs. Click any
+             row to drill into the raw upload entries behind that SKU. -->
+        <div id="page-inventory" class="page">
+          <div class="card card-table" style="padding:0">
+            <div class="filter-bar" style="flex-wrap:wrap">
+              <div style="position:relative;flex:1;min-width:200px">
+                <span class="search-icon" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txt-4);display:flex;align-items:center">
+                  <i data-lucide="search" class="icon" style="width:14px;height:14px"></i>
+                </span>
+                <input class="form-input search-input" id="inventory-search" placeholder="Search by SKU, Part #, or UPC&hellip;" style="padding-left:34px">
+              </div>
+              <select class="form-select" id="filter-inventory-status" style="width:180px">
+                <option value="all">All SKUs</option>
+                <option value="in_stock">In Stock</option>
+                <option value="oos">Out of Stock</option>
+                <option value="phantom">Phantom (Oversold)</option>
+                <option value="undefined">Undefined SKUs</option>
+              </select>
+              <button class="btn btn-secondary btn-sm" id="inventory-export-btn">
+                <i data-lucide="download" class="icon" style="width:14px;height:14px"></i> Export
+              </button>
+            </div>
+            <div class="table-wrap" style="border:none;border-radius:0">
+              <table class="data-table" id="inventory-table">
+                <thead>
+                  <tr>
+                    <th style="width:30px"></th>
+                    <th data-sort="sku">SKU</th>
+                    <th class="num" data-sort="initial">Total Stock</th>
+                    <th class="num" data-sort="sold">Sold</th>
+                    <th class="num" data-sort="phantom">Phantom</th>
+                    <th class="num" data-sort="remaining">Remaining</th>
+                    <th class="num" data-sort="boxes">Boxes</th>
+                    <th data-sort="last_added">Last Added</th>
+                    <th style="width:80px;text-align:center">Boxes</th>
+                  </tr>
+                </thead>
+                <tbody id="inventory-tbody"></tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span class="pagination-info" id="inventory-info"></span>
+              <div id="inventory-pagination"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- â”€â”€ Orders page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div id="page-orders" class="page">
+          <div class="card card-table" style="padding:0">
+            <div class="filter-bar" style="flex-wrap:wrap">
+              <div style="position:relative;flex:1;min-width:180px">
+                <span class="search-icon" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txt-4);display:flex;align-items:center">
+                  <i data-lucide="search" class="icon" style="width:14px;height:14px"></i>
+                </span>
+                <input class="form-input search-input" id="orders-search" placeholder="Search by SKU&hellip;" style="padding-left:34px">
+              </div>
+              <select class="form-select" id="filter-platform" style="width:160px">
+                <option value="">All Platforms</option>
+              </select>
+              <input class="form-input" id="filter-date-from" type="date" style="width:145px" title="From date">
+              <input class="form-input" id="filter-date-to"   type="date" style="width:145px" title="To date">
+              <select class="form-select" id="filter-order-status" style="width:200px">
+                <option value="all">All Orders</option>
+                <option value="normal">Normal Orders</option>
+                <option value="wrong_part">Shipped Wrong Part#</option>
+                <option value="unknown">Unknown Orders</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" id="orders-reset-filters">Reset</button>
+              <button class="btn btn-secondary btn-sm" id="orders-export">
+                <i data-lucide="download" class="icon" style="width:14px;height:14px"></i> Export Orders
+              </button>
+            </div>
+            <div class="table-wrap" style="border:none;border-radius:0">
+              <table class="data-table" id="orders-table">
+                <thead>
+                  <tr>
+                    <th style="width:110px">UID</th>
+                    <th style="width:160px">Order ID</th>
+                    <th data-sort="order_date">Order Date</th>
+                    <th data-sort="sku">SKU</th>
+                    <th class="num" data-sort="quantity_sold">Qty Sold</th>
+                    <th data-sort="shipped_sku">Shipped SKU</th>
+                    <th data-sort="platform">Platform</th>
+                  </tr>
+                </thead>
+                <tbody id="orders-tbody"></tbody>
+              </table>
+            </div>
+            <div class="pagination">
+              <span class="pagination-info" id="orders-info"></span>
+              <div id="orders-pagination"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- â”€â”€ Uploads page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div id="page-uploads" class="page" data-min-role="manager">
+
+          <!-- Sticky top section: 3-col grid (Inventory | Orders | Guide) -->
+          <div class="uploads-top">
+            <div class="uploads-top-grid">
+
+              <!-- Inventory upload card -->
+              <div class="upload-card">
+                <div class="upload-card-header">
+                  <div class="upload-card-title">
+                    <i data-lucide="package" class="icon" style="width:15px;height:15px"></i> Inventory Data
+                  </div>
+                  <a href="#" class="btn btn-ghost btn-sm" data-download-template="inventory" style="font-size:11.5px">Download CSV Template</a>
+                </div>
+                <div class="upload-card-desc">
+                  <strong>action</strong>: <code>Add</code> / <code>Update</code> / <code>Remove</code> &nbsp;&middot;&nbsp; Add requires: sku, upc, quantity, part_number, box_number, date_added
+                </div>
+                <div class="drop-zone" id="drop-zone-inventory">
+                  <input type="file" id="file-input-inventory" accept=".tsv,.txt">
+                  <div class="drop-icon"><i data-lucide="package" class="icon" style="width:26px;height:26px"></i></div>
+                  <div class="drop-text">Drop .tsv file here or click to browse</div>
+                  <div class="drop-sub">Tab Separated Values (.tsv) &middot; Max 10 MB / 100,000 rows</div>
+                  <div class="drop-file" style="display:none"></div>
+                </div>
+                <div class="progress-wrap" id="progress-inventory" style="display:none">
+                  <div class="progress-bar"></div>
+                </div>
+                <div id="upload-status-inventory"></div>
+                <div class="upload-actions">
+                  <button class="btn btn-secondary btn-sm" id="clear-btn-inventory">Clear</button>
+                  <button class="btn btn-primary btn-sm" id="upload-btn-inventory" disabled>Upload</button>
+                </div>
+              </div>
+
+              <!-- Orders upload card -->
+              <div class="upload-card">
+                <div class="upload-card-header">
+                  <div class="upload-card-title">
+                    <i data-lucide="shopping-cart" class="icon" style="width:15px;height:15px"></i> Order Data
+                  </div>
+                  <a href="#" class="btn btn-ghost btn-sm" data-download-template="orders" style="font-size:11.5px">Download CSV Template</a>
+                </div>
+                <div class="upload-card-desc">
+                  <strong>action</strong>: <code>Add</code> / <code>Update</code> / <code>Remove</code> &nbsp;&middot;&nbsp; Add requires: order_date, sku, quantity_sold, platform
+                </div>
+                <div class="drop-zone" id="drop-zone-orders">
+                  <input type="file" id="file-input-orders" accept=".tsv,.txt">
+                  <div class="drop-icon"><i data-lucide="clipboard-list" class="icon" style="width:26px;height:26px"></i></div>
+                  <div class="drop-text">Drop .tsv file here or click to browse</div>
+                  <div class="drop-sub">Tab Separated Values (.tsv) &middot; Max 10 MB / 100,000 rows</div>
+                  <div class="drop-file" style="display:none"></div>
+                </div>
+                <div class="progress-wrap" id="progress-orders" style="display:none">
+                  <div class="progress-bar"></div>
+                </div>
+                <div id="upload-status-orders"></div>
+                <div class="upload-actions">
+                  <button class="btn btn-secondary btn-sm" id="clear-btn-orders">Clear</button>
+                  <button class="btn btn-primary btn-sm" id="upload-btn-orders" disabled>Upload</button>
+                </div>
+              </div>
+
+              <!-- Upload Guide side panel -->
+              <div class="upload-guide-panel">
+                <div class="upload-guide-panel-header">
+                  <i data-lucide="book-open" class="icon" style="width:13px;height:13px"></i>
+                  Upload Guide
+                </div>
+                <div class="upload-guide-panel-body">
+                  <div style="display:grid;gap:6px;margin-bottom:10px">
+                    <div style="display:flex;align-items:flex-start;gap:8px">
+                      <span class="step-badge">1</span>
+                      <div>Download the <strong>CSV template</strong> for the data type you want to upload</div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:8px">
+                      <span class="step-badge">2</span>
+                      <div>Fill in your data using <strong>Excel or Google Sheets</strong></div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:8px">
+                      <span class="step-badge">3</span>
+                      <div><strong>Format SKU / UPC / Order ID as Text</strong> in Excel &mdash; prevents leading-zero loss</div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:8px">
+                      <span class="step-badge">4</span>
+                      <div><strong>File &rarr; Save As &rarr; Tab Separated Values (.tsv)</strong></div>
+                    </div>
+                    <div style="display:flex;align-items:flex-start;gap:8px">
+                      <span class="step-badge">5</span>
+                      <div>Upload the <strong>.tsv file</strong> using the form</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:flex-start;gap:7px;padding:8px 10px;background:rgba(220,38,38,.05);border:1px solid rgba(220,38,38,.15);border-radius:5px">
+                    <i data-lucide="alert-triangle" class="icon" style="width:13px;height:13px;color:#dc2626;flex-shrink:0;margin-top:1px"></i>
+                    <div style="font-size:11px;color:var(--txt-3)"><strong>Excel / XLSX not supported.</strong> Save as <strong>Tab Separated Values (.tsv)</strong>, not CSV. Quantities must be whole numbers. Dates must be valid format.</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Scrollable upload history -->
+          <div class="uploads-history">
+            <div class="card card-table" style="padding:0">
+              <div class="filter-bar">
+                <div class="card-title" style="flex:1">Upload History</div>
+                <select class="form-select" id="history-type-filter" style="width:160px">
+                  <option value="">All Types</option>
+                  <option value="inventory">Inventory</option>
+                  <option value="orders">Orders</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" id="history-refresh-btn">
+                  <i data-lucide="refresh-cw" class="icon" style="width:13px;height:13px"></i> Refresh
+                </button>
+              </div>
+              <div class="table-wrap" style="border:none;border-radius:0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th>File</th>
+                      <th class="num">Rows</th>
+                      <th>Status</th>
+                      <th style="width:120px">Summary</th>
+                    </tr>
+                  </thead>
+                  <tbody id="upload-history-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- â”€â”€ Settings page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ -->
+        <div id="page-settings" class="page" data-min-role="admin">
+
+          <!-- Sticky header + tab bar -->
+          <div class="settings-sticky">
+            <div class="section-header">
+              <div>
+                <div class="section-title">Settings</div>
+                <div class="section-sub">Users, system status, and account</div>
+              </div>
+            </div>
+            <div id="settings-tab-list" class="tab-list">
+              <button class="tab-btn active" data-tab="users">Users</button>
+              <button class="tab-btn" data-tab="organizations">Organizations</button>
+              <button class="tab-btn" data-tab="system">System Status</button>
+              <button class="tab-btn" data-tab="logs">Logs</button>
+            </div>
+          </div>
+
+          <!-- Scrollable tab content -->
+          <div class="settings-body">
+
+          <!-- Users tab -->
+          <div id="tab-users" class="tab-panel active">
+            <div class="card card-table" style="padding:0">
+              <div class="filter-bar">
+                <div class="card-title" style="flex:1">User Management</div>
+                <button class="btn btn-primary btn-sm" id="add-user-btn">+ New User</button>
+              </div>
+              <div class="table-wrap" style="border:none;border-radius:0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Username</th>
+                      <th style="width:110px">Role</th>
+                      <th>Organizations</th>
+                      <th style="width:88px">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="users-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Organizations tab -->
+          <div id="tab-organizations" class="tab-panel">
+            <div class="card card-table" style="padding:0">
+              <div class="filter-bar">
+                <div class="card-title" style="flex:1">Organizations</div>
+                <button class="btn btn-primary btn-sm" id="add-org-btn">+ New Organization</button>
+              </div>
+              <div class="table-wrap" style="border:none;border-radius:0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Slug</th>
+                      <th>SKU Structure</th>
+                      <th>Status</th>
+                      <th style="width:160px">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="orgs-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- System Status tab -->
+          <div id="tab-system" class="tab-panel">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">System Status</div>
+              </div>
+              <div id="system-status-content">
+                <div style="display:flex;justify-content:center;padding:24px"><div class="spin"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Logs tab -->
+          <div id="tab-logs" class="tab-panel">
+            <div class="card settings-logs-card">
+              <div class="card-header"><div class="card-title">Activity Logs</div></div>
+              <div id="logs-content" class="settings-logs-content">
+                <div style="display:flex;justify-content:center;padding:24px"><div class="spin"></div></div>
+              </div>
+              <div class="pagination" id="logs-pagination"></div>
+            </div>
+          </div>
+
+          </div><!-- /.settings-body -->
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- External libraries (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+
+  <!-- App modules â€” order matters: utilities first, then API/auth, then features, app last -->
+  <!-- v=56 â€” bump this number on every deploy to bust browser/CDN cache -->
+  <script src="js/utilities.js?v=112"></script>
+  <script src="js/icons.js?v=112"></script>
+  <script src="js/notifications.js?v=112"></script>
+  <script src="js/loading.js?v=112"></script>
+  <script src="js/api.js?v=112"></script>
+  <script src="js/skuEngine.js?v=112"></script>
+  <script src="js/skuValidator.js?v=112"></script>
+  <script src="js/metricsEngine.js?v=112"></script>
+  <script src="js/auth.js?v=112"></script>
+  <script src="js/dashboard.js?v=112"></script>
+  <script src="js/inventory.js?v=112"></script>
+  <script src="js/orders.js?v=112"></script>
+  <script src="js/uploads.js?v=112"></script>
+  <script src="js/app.js?v=112"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

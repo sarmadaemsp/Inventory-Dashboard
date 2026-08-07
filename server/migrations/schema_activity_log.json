@@ -1,0 +1,9 @@
+[
+  {"name": "activity_id",     "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "organization_id", "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "user_id",         "type": "STRING",    "mode": "NULLABLE"},
+  {"name": "action_type",     "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "entity_type",     "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "description",     "type": "STRING",    "mode": "REQUIRED"},
+  {"name": "created_at",      "type": "TIMESTAMP", "mode": "REQUIRED"}
+]

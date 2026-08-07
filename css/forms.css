@@ -1,0 +1,283 @@
+/* ============================================================
+   forms.css — Form controls, labels, inputs, file drop zones,
+               progress bars, inline row layouts
+   ============================================================ */
+
+/* ── Form group ─────────────────────────────────────────────── */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 16px;
+}
+.form-group:last-child { margin-bottom: 0; }
+
+.form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.form-row .form-group { flex: 1 1 180px; margin-bottom: 0; min-width: 0; }
+@media (max-width: 480px) {
+  .form-row { flex-direction: column; align-items: stretch; }
+  .form-row .form-group { flex: 1 1 auto; width: 100%; }
+}
+
+/* ── Labels ─────────────────────────────────────────────────── */
+.form-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--txt-2);
+}
+.form-label .req { color: var(--error); margin-left: 2px; }
+
+/* ── Inputs / Selects / Textareas ───────────────────────────── */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--txt-1);
+  font-size: 13.5px;
+  transition: border-color var(--dur), box-shadow var(--dur);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.08);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder { color: var(--txt-4); }
+
+.form-input.has-error,
+.form-select.has-error { border-color: var(--error); }
+
+/* Filter-active highlight intentionally REMOVED.
+   Filter selects and date inputs now keep their default neutral
+   appearance regardless of whether the user has chosen a non-default
+   value. Was visually distracting; users can read the value itself. */
+
+.form-textarea { resize: vertical; min-height: 80px; }
+
+/* ── Helper text ────────────────────────────────────────────── */
+.form-hint  { font-size: 11.5px; color: var(--txt-3); }
+.form-error { font-size: 11.5px; color: var(--error);  }
+
+/* ── Search input with icon ─────────────────────────────────── */
+.search-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.search-wrap .search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 14px;
+  color: var(--txt-4);
+  pointer-events: none;
+}
+.search-input { padding-left: 32px !important; }
+
+/* ── File drop zone ─────────────────────────────────────────── */
+.drop-zone {
+  border: 2px dashed var(--border-2);
+  border-radius: var(--r-lg);
+  padding: 20px 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--dur), background var(--dur);
+  background: var(--surface-2);
+  position: relative;
+}
+.drop-zone:hover,
+.drop-zone.drag-over {
+  border-color: var(--primary);
+  background: var(--primary-50);
+}
+.drop-zone.has-file {
+  border-color: var(--success);
+  background: var(--success-bg);
+}
+.drop-zone input[type="file"] { display: none; }
+
+.drop-icon {
+  font-size: 24px;
+  opacity: .4;
+  margin-bottom: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--txt-3);
+}
+.drop-text { font-size: 13px; font-weight: 600; color: var(--txt-2); }
+.drop-sub  { font-size: 11.5px; color: var(--txt-4); margin-top: 3px; }
+.drop-file { font-size: 13px; font-weight: 600; color: var(--success); margin-top: 8px; }
+
+/* ── Progress bar ───────────────────────────────────────────── */
+.progress-wrap {
+  background: var(--surface-3);
+  border-radius: 99px;
+  height: 6px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.progress-bar {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+  transition: width .4s ease;
+}
+.progress-bar.success { background: var(--success); }
+.progress-bar.error   { background: var(--error); }
+
+/* ── Upload step indicators ─────────────────────────────────── */
+.upload-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+.upload-step {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+.upload-step:not(:last-child)::after {
+  content: '';
+  display: block;
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+  margin: 0 6px;
+}
+.upload-step-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 10px;
+  color: var(--txt-4);
+  transition: border-color .25s, background .25s;
+}
+.upload-step.active .upload-step-dot {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+  animation: step-pulse .9s ease-in-out infinite;
+}
+.upload-step.done .upload-step-dot {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+.upload-step-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--txt-4);
+  white-space: nowrap;
+  transition: color .25s;
+}
+.upload-step.active .upload-step-label { color: var(--primary); }
+.upload-step.done  .upload-step-label  { color: var(--success); }
+@keyframes step-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .5; }
+}
+
+/* ── Uploads top grid (Inventory | Orders | Guide) ──────────── */
+.uploads-top-grid {
+  display: grid;
+  grid-template-columns: 3fr 3fr 4fr;
+  gap: 14px;
+  align-items: stretch;
+}
+@media (max-width: 1200px) {
+  .uploads-top-grid { grid-template-columns: 1fr 1fr; }
+  .uploads-top-grid > .upload-guide-panel { grid-column: 1 / -1; }
+}
+@media (max-width: 700px) {
+  .uploads-top-grid { grid-template-columns: 1fr; gap: 12px; }
+}
+
+/* ── Upload card ────────────────────────────────────────────── */
+.upload-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* ── Upload guide side panel ────────────────────────────────── */
+.upload-guide-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+.upload-guide-panel-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.upload-guide-panel-body {
+  padding: 12px 14px;
+  overflow-y: auto;
+  font-size: 12px;
+  color: var(--txt-2);
+  line-height: 1.5;
+}
+
+.upload-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upload-card-title {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--txt-1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-card-desc { font-size: 12px; color: var(--txt-3); line-height: 1.5; }
+
+.upload-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 4px; }

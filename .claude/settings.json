@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud logging read *)",
+      "Bash(gcloud logging *)",
+      "Bash(gcloud run services describe *)",
+      "Bash(gcloud run services list *)",
+      "Bash(gcloud run revisions list *)",
+      "Bash(gcloud run revisions describe *)",
+      "Bash(gcloud projects list)",
+      "Bash(gcloud config list)",
+      "Bash(gcloud auth list)",
+      "Bash(gcloud info)"
+    ]
+  }
+}

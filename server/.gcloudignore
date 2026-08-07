@@ -1,0 +1,11 @@
+# Controls what gcloud builds submit uploads to Cloud Build.
+# Without this file gcloud falls back to the root .gitignore,
+# which may exclude server/src/ files and produce a stale container.
+node_modules/
+.env
+.env.example
+*.log
+.git/
+.gitignore
+README.md
+setup-gcp.sh
