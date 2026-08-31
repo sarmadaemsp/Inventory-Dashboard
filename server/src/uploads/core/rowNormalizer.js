@@ -68,14 +68,19 @@ export function parsePositiveInt(raw, field, rowNum) {
  * Returns a normalized "YYYY-MM-DD" string, or null if unparseable.
  *
  * Supported formats:
- *   YYYY-MM-DD   (ISO — passthrough)
- *   M/D/YYYY     (US slash — Excel default)
- *   MM/DD/YYYY
- *   M-D-YYYY     (US dash)
- *   MM-DD-YYYY
+ *   YYYY-MM-DD       (ISO — passthrough)
+ *   M/D/YYYY(Y)      (slash — 2 or 4-digit year)
+ *   M-D-YYYY(Y)      (dash — 2 or 4-digit year)
  *   YYYY/MM/DD
  *   Excel serial number (integer 40000–60000)
  *   JS Date fallback for anything else
+ *
+ * Slash/dash dates try US month-first order (M-D-Y) first, since that's
+ * Excel's historical default; when that reading is invalid (e.g. "19-08-26"
+ * — 19 can't be a month) it falls back to day-first order (D-M-Y), which
+ * covers non-US regional date formats without changing how any
+ * already-valid month-first date is interpreted. A 2-digit year is read
+ * as 20YY (fine for the app's operating lifetime).
  */
 export function normalizeDate(raw) {
   const str = String(raw ?? '').trim();
@@ -87,10 +92,12 @@ export function normalizeDate(raw) {
     return isNaN(d.getTime()) ? null : str;
   }
 
-  // M/D/YYYY or MM/DD/YYYY
-  const slashUS = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  // M/D/YYYY or MM/DD/YYYY (2 or 4-digit year)
+  const slashUS = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
   if (slashUS) {
-    return _buildYMD(+slashUS[3], +slashUS[1], +slashUS[2]);
+    const year = _normalizeYear(slashUS[3]);
+    const a = +slashUS[1], b = +slashUS[2];
+    return _buildYMD(year, a, b) || _buildYMD(year, b, a);
   }
 
   // YYYY/MM/DD
@@ -99,10 +106,13 @@ export function normalizeDate(raw) {
     return _buildYMD(+slashISO[1], +slashISO[2], +slashISO[3]);
   }
 
-  // M-D-YYYY or MM-DD-YYYY (must not look like YYYY-MM-DD, already handled above)
-  const dashUS = str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  // M-D-YYYY or MM-DD-YYYY (2 or 4-digit year; must not look like
+  // YYYY-MM-DD, already handled above)
+  const dashUS = str.match(/^(\d{1,2})-(\d{1,2})-(\d{2}|\d{4})$/);
   if (dashUS) {
-    return _buildYMD(+dashUS[3], +dashUS[1], +dashUS[2]);
+    const year = _normalizeYear(dashUS[3]);
+    const a = +dashUS[1], b = +dashUS[2];
+    return _buildYMD(year, a, b) || _buildYMD(year, b, a);
   }
 
   // Excel serial number
@@ -121,6 +131,10 @@ export function normalizeDate(raw) {
   }
 
   return null;
+}
+
+function _normalizeYear(yStr) {
+  return yStr.length === 2 ? 2000 + Number(yStr) : Number(yStr);
 }
 
 function _buildYMD(y, m, d) {
