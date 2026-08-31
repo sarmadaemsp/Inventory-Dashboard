@@ -64,7 +64,11 @@ steps:
       # AFTER creating the GCS bucket + granting the Cloud Run SA
       # roles/storage.objectAdmin (see docs/AUDIT_FOLLOWUP.md).
       # Falls back to chunked DML when unset.
-      - --set-env-vars=GCP_PROJECT_ID=$PROJECT_ID,CORS_ORIGIN=https://mughalfaizan0034-dotcom.github.io,NODE_ENV=production,LOG_LEVEL=info,DEBUG_ROUTES=true
+      # Custom "@" delimiter (^@^ prefix) since CORS_ORIGIN's value itself
+      # contains a comma — gcloud's default --set-env-vars delimiter is ","
+      # and would otherwise split CORS_ORIGIN's two origins into a bogus
+      # extra env var.
+      - --set-env-vars=^@^GCP_PROJECT_ID=$PROJECT_ID@CORS_ORIGIN=https://mughalfaizan0034-dotcom.github.io,https://sarmadaemsp.github.io@NODE_ENV=production@LOG_LEVEL=info@DEBUG_ROUTES=true
 
 images:
   - ${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_IMAGE}:latest

@@ -123,6 +123,7 @@ export async function buildApp() {
   // No `credentials` — we use JWT in the Authorization header, no cookies.
   const HARDCODED_ALLOWED = new Set([
     'https://mughalfaizan0034-dotcom.github.io',
+    'https://sarmadaemsp.github.io',
   ]);
   const envAllowed     = new Set(env.CORS_ORIGIN.filter(o => o !== '*'));
   const wildcardAllowed = env.CORS_ORIGIN.includes('*');
