@@ -2285,7 +2285,7 @@ const App = (() => {
     orders:      { label: 'Orders',         minRole: 'manager', init: () => Orders.load() },
     uploads:     { label: 'Uploads',        minRole: 'manager', init: () => Uploads.loadHistory() },
     settings:    { label: 'Settings',       minRole: 'admin',   init: () => Settings.loadUsers() },
-    'box-lookup':{ label: 'Box Lookup',     minRole: 'viewer',  init: () => {} },
+    'box-lookup':{ label: 'Box Lookup',     minRole: 'viewer',  init: () => BoxLookup.search('') },
   };
 
   // First page the user lands on after login. Honors the URL hash when
@@ -2333,6 +2333,24 @@ const App = (() => {
     }
 
     window.location.hash = pageId;
+  }
+
+  // Force a page's data to be treated as stale. Every page except
+  // Dashboard only fetches once per session (see the _initialized guard
+  // in navigate() above) — a background mutation (e.g. an async upload's
+  // summary refresh finishing after the page was already visited) would
+  // otherwise never be reflected until a hard browser reload. If the
+  // page is the one currently on screen, reload it immediately so the
+  // user sees fresh numbers without navigating away and back; otherwise
+  // just clear the "already initialized" flag so the NEXT visit fetches
+  // fresh instead of serving the frozen first-load snapshot.
+  function invalidatePage(pageId) {
+    if (!PAGES[pageId]) return;
+    if (_currentPage === pageId) {
+      PAGES[pageId].init?.();
+    } else {
+      _initialized[pageId] = false;
+    }
   }
 
   function _initSidebarToggle() {
@@ -2614,7 +2632,7 @@ const App = (() => {
     }
   }
 
-  return { navigate, showApp, showLogin, boot, syncFilterHighlights, resetAllState };
+  return { navigate, showApp, showLogin, boot, syncFilterHighlights, resetAllState, invalidatePage };
 })();
 
 /* ── Entry point ────────────────────────────────────────────── */

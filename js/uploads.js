@@ -160,6 +160,22 @@ const Uploads = (() => {
 
   function _sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+  // Which other pages' data can go stale from this upload type, once the
+  // background summary refresh (see the 'refreshing' phase above) commits.
+  // Inventory uploads change per-SKU/per-box stock; orders uploads change
+  // sold/remaining/phantom for every affected SKU too, plus the Orders
+  // table itself. Dashboard is included for both since its KPIs roll up
+  // the same numbers — App.invalidatePage() reloads it immediately if
+  // it's the page currently on screen, or just marks it stale otherwise.
+  const _AFFECTED_PAGES = {
+    inventory: ['inventory', 'box-lookup', 'dashboard'],
+    orders:    ['inventory', 'orders', 'box-lookup', 'dashboard'],
+  };
+
+  function _invalidateAffectedPages(fileType) {
+    (_AFFECTED_PAGES[fileType] || []).forEach(pageId => App.invalidatePage?.(pageId));
+  }
+
   async function _pollUntilTerminal(uploadId, onPhase) {
     const start = Date.now();
     let lastPhase = null;
@@ -226,6 +242,7 @@ const Uploads = (() => {
         // (shouldn't happen with the new lifecycle, but tolerate it).
         _renderTerminal(accept, { statusEl, progressBar, setProgress });
         MetricsEngine.invalidate();
+        _invalidateAffectedPages(fileType);
         loadHistory();
         return;
       }
@@ -261,6 +278,7 @@ const Uploads = (() => {
           </div>`;
       }
       MetricsEngine.invalidate();
+      _invalidateAffectedPages(fileType);
       Notify.success('Upload complete', `${total.toLocaleString()} row${total === 1 ? '' : 's'} processed.`);
       loadHistory();
     } catch (err) {
