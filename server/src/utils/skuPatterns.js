@@ -82,3 +82,23 @@ export function wrongPartSql({
         != COALESCE(REGEXP_EXTRACT(${skuCol}, r'^ARA[0-9]+(.+)$'), ${skuCol})
   )`.trim();
 }
+
+/**
+ * SQL expression that extracts the numeric box portion right after "ARA"
+ * in a SKU (e.g. "ARA1040-A40-072053017427" → 1040) and casts it to an
+ * INT64 for numeric ORDER BY — so ARA2 sorts before ARA10 instead of
+ * plain-string order putting ARA10 before ARA2.
+ *
+ * SKUs that don't match the "ARA<number>-..." shape (legacy/non-standard
+ * formats) produce NULL here — callers should pair this with
+ * `NULLS LAST` plus the raw SKU column as a tiebreaker, same fallback
+ * pattern already used for box_number sorting (see lookupRepository.js).
+ * Never throws / never breaks the sort — it just sorts non-conforming
+ * SKUs after all numeric ones.
+ *
+ * @param {string} [skuCol='sku'] — column / expression holding the SKU
+ * @returns {string} SQL expression (NOT aliased)
+ */
+export function skuNumericSortExpr(skuCol = 'sku') {
+  return `SAFE_CAST(REGEXP_EXTRACT(${skuCol}, r'^ARA(\\d+)-') AS INT64)`;
+}

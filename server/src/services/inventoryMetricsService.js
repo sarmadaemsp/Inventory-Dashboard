@@ -1,6 +1,6 @@
 import { TABLES } from '../config/tables.js';
 import { isUndefinedRowSql } from '../utils/inventoryPatterns.js';
-import { effectiveSkuSql, wrongPartSql } from '../utils/skuPatterns.js';
+import { effectiveSkuSql, wrongPartSql, skuNumericSortExpr } from '../utils/skuPatterns.js';
 import { ordersAggCTE, invAggCTE, perSkuCTE } from '../utils/skuPivots.js';
 
 /**
@@ -328,6 +328,15 @@ export function createInventoryMetricsService({ bq, projectId, orgsRepo, logger 
     const dir = sortDir === 'desc' ? 'DESC' : 'ASC';
     const offset = Math.max(0, (page - 1) * pageSize);
 
+    // SKU sort: numeric order on the digits right after "ARA" (ARA2 before
+    // ARA10), not plain string order. SKUs that don't match "ARA<n>-..."
+    // sort after all numeric ones, then alphabetically among themselves —
+    // same NULLS LAST fallback pattern used for box_number in
+    // lookupRepository.js. Every other sort field is unaffected.
+    const orderByClause = sortBy === 'sku'
+      ? `${skuNumericSortExpr(col)} ${dir} NULLS LAST, ${col} ${dir}`
+      : `${col} ${dir}, per_sku.sku ASC`;
+
     // extras CTE: per-SKU box count + most recent upload date + canonical
     // part/upc lookups for display. ANY_VALUE is safe here because SKU is
     // structured as ARA{box}-{part}-{upc}; rows sharing a SKU agree on
@@ -365,7 +374,7 @@ export function createInventoryMetricsService({ bq, projectId, orgsRepo, logger 
       FROM per_sku
       LEFT JOIN extras ON per_sku.sku = extras.sku
       ${whereCond}
-      ORDER BY ${col} ${dir}, per_sku.sku ASC
+      ORDER BY ${orderByClause}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 
@@ -499,13 +508,20 @@ export function createInventoryMetricsService({ bq, projectId, orgsRepo, logger 
     const dir = sortDir === 'desc' ? 'DESC' : 'ASC';
     const offset = Math.max(0, (page - 1) * pageSize);
 
+    // Same numeric-SKU-sort treatment as the live CTE path above — keeps
+    // the two read paths consistent so cutover/rollback never changes
+    // sort order.
+    const orderByClause = sortBy === 'sku'
+      ? `${skuNumericSortExpr(col)} ${dir} NULLS LAST, ${col} ${dir}`
+      : `${col} ${dir}, sku ASC`;
+
     const dataQuery = `
       SELECT sku, total_stock, sold_units, fulfilled_units, phantom_units,
              remaining_units, boxes_count, last_added_at, part_number, upc,
              is_undefined
       FROM ${inventorySummary}
       WHERE ${where.join(' AND ')}
-      ORDER BY ${col} ${dir}, sku ASC
+      ORDER BY ${orderByClause}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
     const countQuery = `

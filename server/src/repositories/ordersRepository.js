@@ -1,5 +1,5 @@
 import { TABLES } from '../config/tables.js';
-import { effectiveSkuSql, wrongPartSql } from '../utils/skuPatterns.js';
+import { effectiveSkuSql, wrongPartSql, skuNumericSortExpr } from '../utils/skuPatterns.js';
 
 // Storage form for orders.shipped_sku is whatever normalizeShippedSku() decided:
 //   "20" / "352"                       — bare box digits
@@ -54,6 +54,12 @@ export function createOrdersRepository({ bq, projectId }) {
     const ALLOWED_SORT = ['order_date', 'sku', 'quantity_sold', 'platform', 'shipped_sku'];
     const col = ALLOWED_SORT.includes(sortBy) ? `o.${sortBy}` : 'o.order_date';
     const dir = sortDir === 'asc' ? 'ASC' : 'DESC';
+    // SKU sort: numeric order on the digits after "ARA" — same pattern as
+    // SKU View's inventoryMetricsService.getSkuSummary. Non-"ARA<n>-..."
+    // SKUs sort after all numeric ones via NULLS LAST.
+    const orderByClause = sortBy === 'sku'
+      ? `${skuNumericSortExpr(col)} ${dir} NULLS LAST, ${col} ${dir}`
+      : `${col} ${dir}, o.created_at DESC`;
 
     // "Unknown" = effective_sku (with shipped_sku override applied) does NOT
     // exist in inventory. mapped_inventory_sku rescues a few rows.
@@ -77,7 +83,7 @@ export function createOrdersRepository({ bq, projectId }) {
       FROM o_eff o
       LEFT JOIN inv_skus inv ON COALESCE(o.mapped_inventory_sku, o.effective_sku) = inv.sku
       WHERE ${baseWhere} ${statusCond}
-      ORDER BY ${col} ${dir}, o.created_at DESC
+      ORDER BY ${orderByClause}
       LIMIT ${pageSize} OFFSET ${offset}
     `;
 
@@ -127,6 +133,9 @@ export function createOrdersRepository({ bq, projectId }) {
     const ALLOWED_SORT = ['order_date', 'sku', 'quantity_sold', 'platform', 'shipped_sku'];
     const col = ALLOWED_SORT.includes(sortBy) ? `o.${sortBy}` : 'o.order_date';
     const dir = sortDir === 'asc' ? 'ASC' : 'DESC';
+    const orderByClause = sortBy === 'sku'
+      ? `${skuNumericSortExpr(col)} ${dir} NULLS LAST, ${col} ${dir}`
+      : `${col} ${dir}, o.created_at DESC`;
 
     const query = `
       WITH inv_skus AS (
@@ -146,7 +155,7 @@ export function createOrdersRepository({ bq, projectId }) {
       FROM o_eff o
       LEFT JOIN inv_skus inv ON COALESCE(o.mapped_inventory_sku, o.effective_sku) = inv.sku
       WHERE ${baseWhere} ${statusCond}
-      ORDER BY ${col} ${dir}, o.created_at DESC
+      ORDER BY ${orderByClause}
     `;
 
     const [rows] = await bq.query({ query, params });
