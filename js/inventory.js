@@ -186,10 +186,17 @@ const BoxLookup = (() => {
       ? document.getElementById('lookup-instock')
       : document.getElementById('lookup-all');
     if (!el) return;
+
+    // A blank query means this is the default "all boxes" view rather
+    // than a user search, so the empty-state copy shouldn't suggest
+    // trying a different Part Number / UPC.
+    const isDefaultView = !data.query;
     el.innerHTML = html || Loading.empty(
       'package',
-      tab === 'instock' ? 'No in-stock inventory found' : 'No inventory found',
-      'Try a different Part Number or UPC'
+      tab === 'instock'
+        ? (isDefaultView ? 'No in-stock boxes' : 'No in-stock inventory found')
+        : (isDefaultView ? 'No boxes found'    : 'No inventory found'),
+      isDefaultView ? 'Boxes will appear here once inventory is uploaded' : 'Try a different Part Number or UPC'
     );
   }
 
@@ -220,6 +227,9 @@ const BoxLookup = (() => {
     });
   }
 
+  // query === '' loads the default "all boxes" view (server returns
+  // every box for the org, sorted numerically by box_number) instead
+  // of a single search result.
   async function search(query) {
     query = (query || '').trim();
     const clearBtn  = document.getElementById('box-clear-btn');
@@ -227,14 +237,7 @@ const BoxLookup = (() => {
     const allEl     = document.getElementById('lookup-all');
     const tabsEl    = document.getElementById('lookup-tabs');
 
-    if (!query) {
-      if (inStockEl) inStockEl.innerHTML = Loading.empty('search', 'Search for box inventory', 'Enter a Part Number or UPC above to view inventory allocation across boxes');
-      if (allEl)     allEl.innerHTML     = '';
-      if (tabsEl)    tabsEl.style.display = 'none';
-      if (clearBtn)  clearBtn.style.display = 'none';
-      return;
-    }
-    if (clearBtn) clearBtn.style.display = '';
+    if (clearBtn) clearBtn.style.display = query ? '' : 'none';
 
     if (inStockEl) inStockEl.innerHTML = `<div style="display:flex;justify-content:center;padding:40px">${Loading.spinnerHtml()}</div>`;
     if (allEl)     allEl.innerHTML     = '';
