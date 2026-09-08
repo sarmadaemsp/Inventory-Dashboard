@@ -1,6 +1,8 @@
 export function createLookupService({ lookupRepo }) {
-  async function search(organizationId, query) {
-    const rows = await lookupRepo.search(organizationId, query);
+  // Groups flat box rows into the byPartNumber / byUpc tree the frontend
+  // renders. Shared by search() (a single upc/part key) and listAll()
+  // (every box in the org, no key) since the shape is identical.
+  function _shapeRows(query, rows) {
     if (!rows.length) return { query, byPartNumber: [], byUpc: [] };
 
     const pnMap  = {};
@@ -32,5 +34,18 @@ export function createLookupService({ lookupRepo }) {
     return { query, byPartNumber, byUpc };
   }
 
-  return { search };
+  async function search(organizationId, query) {
+    const rows = await lookupRepo.search(organizationId, query);
+    return _shapeRows(query, rows);
+  }
+
+  // Every box in the org, sorted numerically ascending by box_number
+  // (enforced in lookupRepository's ORDER BY). Powers the Box Lookup
+  // page's default view before any search term is entered.
+  async function listAll(organizationId) {
+    const rows = await lookupRepo.listAll(organizationId);
+    return _shapeRows('', rows);
+  }
+
+  return { search, listAll };
 }
