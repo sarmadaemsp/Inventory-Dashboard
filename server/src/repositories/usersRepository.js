@@ -80,9 +80,9 @@ export function createUsersRepository({ bq, projectId }) {
   async function insert(user) {
     const query = `
       INSERT INTO ${table}
-        (user_id, username, display_name, password_hash, is_active, created_at, updated_at)
+        (user_id, username, display_name, password_hash, role, is_active, created_at, updated_at)
       VALUES
-        (@user_id, @username, @display_name, @password_hash,
+        (@user_id, @username, @display_name, @password_hash, @role,
          @is_active, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
     `;
     await bq.query({ query, params: user });

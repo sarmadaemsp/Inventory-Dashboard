@@ -69,6 +69,7 @@ export function createUsersService({ usersRepo, membershipsRepo, usernameService
       username:      normalized,
       display_name:  display_name.trim(),
       password_hash: passwordHash,
+      role,
       is_active:     true,
     });
 
