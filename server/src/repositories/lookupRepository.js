@@ -24,6 +24,21 @@ function looksLikeUpc(q) {
   return /^\d{8,14}$/.test(q);
 }
 
+// Minimum characters before attempting the SKU substring fallback (see
+// below). Below this length a full-org scan returns too many low-signal
+// matches to be useful, and the live-search debounce would otherwise
+// fire that scan on every early keystroke for no benefit.
+const MIN_SKU_FALLBACK_LEN = 3;
+
+// SKU is constructed as ARA{box_number}-{part_number}-{upc} (see
+// skuPatterns.js). box_summary_by_upc/by_part have no `sku` column, but
+// the exact same string can be reconstructed from columns they DO have —
+// no schema change needed. Substring LIKE (not exact equality) so it
+// also tolerates part_number containing its own internal dashes.
+function _reconstructedSkuLikeExpr() {
+  return `LOWER(CONCAT('ARA', box_number, '-', part_number, '-', upc))`;
+}
+
 export function createLookupRepository({ bq, projectId, logger }) {
   const invTable = `\`${projectId}.${TABLES.INVENTORY}\``;
   const ordTable = `\`${projectId}.${TABLES.ORDERS}\``;
@@ -39,6 +54,18 @@ export function createLookupRepository({ bq, projectId, logger }) {
     const q = (query || '').trim();
     if (!q) return [];
 
+    // Exact match on UPC/part_number (as before), plus — once the query
+    // is long enough to be meaningful — a substring match against the
+    // SKU itself. Covers full/partial SKU strings and the "ARA<box>"
+    // box-number-prefix form users often type (e.g. "ARA166"), matching
+    // SKU View's existing sku/part_number/upc substring search.
+    const skuFallback = q.length >= MIN_SKU_FALLBACK_LEN;
+    const matchCond = `
+      LOWER(TRIM(COALESCE(upc, '')))            = LOWER(TRIM(@query))
+      OR LOWER(TRIM(COALESCE(part_number, ''))) = LOWER(TRIM(@query))
+      ${skuFallback ? "OR LOWER(TRIM(COALESCE(sku, ''))) LIKE @likeQuery" : ''}
+    `;
+
     const sql = `
       WITH inv_grouped AS (
         SELECT
@@ -48,10 +75,7 @@ export function createLookupRepository({ bq, projectId, logger }) {
           SUM(quantity)             AS initial_stock
         FROM ${invTable}
         WHERE organization_id = @organizationId
-          AND (
-            LOWER(TRIM(COALESCE(upc, '')))            = LOWER(TRIM(@query))
-            OR LOWER(TRIM(COALESCE(part_number, ''))) = LOWER(TRIM(@query))
-          )
+          AND (${matchCond})
         GROUP BY COALESCE(box_number, ''), COALESCE(part_number, ''), COALESCE(upc, '')
       ),
       inv_skus AS (
@@ -62,10 +86,7 @@ export function createLookupRepository({ bq, projectId, logger }) {
           sku
         FROM ${invTable}
         WHERE organization_id = @organizationId
-          AND (
-            LOWER(TRIM(COALESCE(upc, '')))            = LOWER(TRIM(@query))
-            OR LOWER(TRIM(COALESCE(part_number, ''))) = LOWER(TRIM(@query))
-          )
+          AND (${matchCond})
       ),
       ${ordersAggCTE({ ordTable })},
       box_orders AS (
@@ -90,10 +111,10 @@ export function createLookupRepository({ bq, projectId, logger }) {
       ORDER BY ig.part_number, ig.upc, remaining_stock DESC
     `;
 
-    const [rows] = await bq.query({
-      query:  sql,
-      params: { organizationId, query: q },
-    });
+    const params = { organizationId, query: q };
+    if (skuFallback) params.likeQuery = `%${q.toLowerCase()}%`;
+
+    const [rows] = await bq.query({ query: sql, params });
     return rows;
   }
 
@@ -130,7 +151,28 @@ export function createLookupRepository({ bq, projectId, logger }) {
     const [firstRows] = await bq.query({ query: first, params: { organizationId, q: normalized } });
     if (firstRows.length) return firstRows;
     const [nextRows]  = await bq.query({ query: next,  params: { organizationId, q: normalized } });
-    return nextRows;
+    if (nextRows.length) return nextRows;
+
+    // Fallback: neither UPC nor part_number matched exactly. Try a
+    // substring match against the reconstructed SKU — covers full/partial
+    // SKU strings and the "ARA<box>" box-number-prefix form users often
+    // type (e.g. "ARA166"). Skipped below MIN_SKU_FALLBACK_LEN: too short
+    // to be a meaningful filter, and the live-search debounce would
+    // otherwise run this full-org scan on every early keystroke.
+    if (raw.length < MIN_SKU_FALLBACK_LEN) return [];
+    const sqlBySkuFallback = `
+      SELECT upc, part_number, box_number,
+             initial_stock, fulfilled_units, phantom_units, remaining_stock
+      FROM ${byPart}
+      WHERE organization_id = @organizationId
+        AND ${_reconstructedSkuLikeExpr()} LIKE @likeQuery
+      ORDER BY part_number, upc, remaining_stock DESC
+    `;
+    const [fallbackRows] = await bq.query({
+      query:  sqlBySkuFallback,
+      params: { organizationId, likeQuery: `%${normalized}%` },
+    });
+    return fallbackRows;
   }
 
   // Compare two result sets and return a structured diff. Box Lookup
@@ -166,6 +208,26 @@ export function createLookupRepository({ bq, projectId, logger }) {
       phantom_units:   Number(r.phantom_units   ?? 0),
       remaining_stock: Number(r.remaining_stock ?? 0),
     }));
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // listAll — every box for the organization, no upc/part filter.
+  // Powers the Box Lookup page's default (pre-search) view. Reads from
+  // box_summary_by_part — its rows are identical to box_summary_by_upc
+  // (both written together on every refresh, just clustered differently
+  // for single-key lookups) so either is a complete per-org box list
+  // when no cluster key is being filtered on.
+  // ─────────────────────────────────────────────────────────────────
+  async function listAll(organizationId) {
+    const sql = `
+      SELECT upc, part_number, box_number,
+             initial_stock, fulfilled_units, phantom_units, remaining_stock
+      FROM ${byPart}
+      WHERE organization_id = @organizationId
+      ORDER BY SAFE_CAST(box_number AS INT64) NULLS LAST, box_number
+    `;
+    const [rows] = await bq.query({ query: sql, params: { organizationId } });
+    return _coerceRows(rows);
   }
 
   async function search(organizationId, query) {
@@ -242,5 +304,5 @@ export function createLookupRepository({ bq, projectId, logger }) {
     return _coerceRows(live);
   }
 
-  return { search };
+  return { search, listAll };
 }
