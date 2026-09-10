@@ -39,13 +39,15 @@ export function createLookupService({ lookupRepo }) {
     return _shapeRows(query, rows);
   }
 
-  // Every box in the org, sorted numerically ascending by box_number
-  // (enforced in lookupRepository's ORDER BY). Powers the Box Lookup
-  // page's default view before any search term is entered.
-  async function listAll(organizationId) {
-    const rows = await lookupRepo.listAll(organizationId);
-    return _shapeRows('', rows);
+  // One page of every box in the org, numerically ordered by box_number.
+  // Returns FLAT rows + a total count ({ items, total }) — not the
+  // byPartNumber/byUpc tree — because the Box Lookup default view renders
+  // a paginated table like SKU View, not the nested search-result cards.
+  // `_shapeRows` stays for actual searches only. Optional status filter
+  // mirrors SKU View (all / in_stock / oos / phantom).
+  async function listAllPaged(organizationId, opts) {
+    return lookupRepo.listAllPaged(organizationId, opts);
   }
 
-  return { search, listAll };
+  return { search, listAllPaged };
 }

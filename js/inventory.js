@@ -6,6 +6,15 @@ const BoxLookup = (() => {
   let _lastData  = null;
   let _activeTab = 'instock';
 
+  // Default "all boxes" view (blank query) — a paginated flat table in
+  // the SKU View style. Entirely separate from the nested Part#/UPC card
+  // tree that an actual search renders (that path is unchanged).
+  let _page         = 1;
+  let _total        = 0;
+  let _statusFilter = 'all';
+  let _boxItems     = [];   // current page's rows, kept for expand lookup
+  const BOX_COL_COUNT = 7;  // chevron · SKU · Initial · Fulfilled · Phantom · Remaining · Status
+
   /* ── Status pill ─────────────────────────────────────────── */
   function _statusPill(rem, phantom = 0, large = false) {
     const pad = large ? '4px 14px' : '2px 9px';
@@ -227,21 +236,40 @@ const BoxLookup = (() => {
     });
   }
 
-  // query === '' loads the default "all boxes" view (server returns
-  // every box for the org, sorted numerically by box_number) instead
-  // of a single search result.
-  async function search(query) {
-    query = (query || '').trim();
-    const clearBtn  = document.getElementById('box-clear-btn');
+  // Toggle page chrome between the two modes. Default view (blank query):
+  // flat paginated table + status filter. Active search: nested card tree
+  // + In Stock / All Boxes tabs. Never both at once.
+  function _setMode(isSearch) {
+    const defaultEl = document.getElementById('lookup-default');
+    const tabsEl    = document.getElementById('lookup-tabs');
     const inStockEl = document.getElementById('lookup-instock');
     const allEl     = document.getElementById('lookup-all');
-    const tabsEl    = document.getElementById('lookup-tabs');
+    const statusEl  = document.getElementById('box-status-filter');
+    if (defaultEl) defaultEl.style.display = isSearch ? 'none' : '';
+    if (statusEl)  statusEl.style.display  = isSearch ? 'none' : '';
+    if (tabsEl)    tabsEl.style.display    = 'none';  // _showResults re-shows it when there are results
+    if (inStockEl) inStockEl.style.display = isSearch ? '' : 'none';
+    if (allEl)     allEl.style.display     = isSearch ? '' : 'none';
+  }
 
+  // Blank query → the default paginated "all boxes" view.
+  // Non-blank query → the existing nested Part#/UPC card search (unchanged).
+  async function search(query) {
+    query = (query || '').trim();
+    const clearBtn = document.getElementById('box-clear-btn');
     if (clearBtn) clearBtn.style.display = query ? '' : 'none';
 
+    if (!query) {
+      _setMode(false);
+      _page = 1;
+      return _loadDefaultView();
+    }
+
+    _setMode(true);
+    const inStockEl = document.getElementById('lookup-instock');
+    const allEl     = document.getElementById('lookup-all');
     if (inStockEl) inStockEl.innerHTML = `<div style="display:flex;justify-content:center;padding:40px">${Loading.spinnerHtml()}</div>`;
     if (allEl)     allEl.innerHTML     = '';
-    if (tabsEl)    tabsEl.style.display = 'none';
 
     try {
       const data = await API.lookup(query);
@@ -250,6 +278,122 @@ const BoxLookup = (() => {
       if (inStockEl) inStockEl.innerHTML = Loading.error('Search failed. Please try again.');
       Notify.apiError(err);
     }
+  }
+
+  /* ── Default "all boxes" view — paginated flat table ─────── */
+  async function _loadDefaultView() {
+    const tbody = document.getElementById('lookup-box-tbody');
+    const info  = document.getElementById('lookup-info');
+    if (tbody) tbody.innerHTML = Loading.tableRows(BOX_COL_COUNT, 6);
+    if (info)  info.textContent = '';
+
+    try {
+      const res  = await API.lookupAllBoxes(_page, CONFIG.getPageSize(), _statusFilter);
+      const data = res?.data ?? res;
+      _renderBoxTable(data.items || [], data.total || 0);
+    } catch (err) {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="${BOX_COL_COUNT}">${Loading.error('Failed to load boxes')}</td></tr>`;
+      Notify.apiError(err);
+    }
+  }
+
+  // SKU is ARA{box_number}-{part_number}-{upc} by construction.
+  function _reconstructedSku(b) {
+    return `ARA${b.box_number ?? ''}-${b.part_number ?? ''}-${b.upc ?? ''}`;
+  }
+
+  function _renderBoxTable(items, total) {
+    _total    = total || 0;
+    _boxItems = items || [];
+    const tbody = document.getElementById('lookup-box-tbody');
+    const info  = document.getElementById('lookup-info');
+    if (!tbody) return;
+
+    if (!_boxItems.length) {
+      tbody.innerHTML = `<tr><td colspan="${BOX_COL_COUNT}" style="padding:0">${Loading.empty(
+        'package',
+        _statusFilter === 'all' ? 'No boxes found' : 'No boxes match this filter',
+        _statusFilter === 'all' ? 'Boxes will appear here once inventory is uploaded' : 'Try a different status filter'
+      )}</td></tr>`;
+      if (info) info.textContent = '';
+      Pagination.render('lookup-pagination', 1, 0, () => {});
+      return;
+    }
+
+    tbody.innerHTML = _boxItems.map((b, idx) => {
+      const rem     = Number(b.remaining_stock ?? 0);
+      const phantom = Number(b.phantom_units   ?? 0);
+      const rowClass = phantom > 0 ? 'sku-row sku-row--phantom'
+                     : (rem === 0 ? 'sku-row sku-row--oos' : 'sku-row');
+      return `<tr class="${rowClass}" data-idx="${idx}">
+        <td class="sku-row-chevron" style="text-align:center;color:var(--txt-4);cursor:pointer;user-select:none">
+          <i data-lucide="chevron-right" class="icon sku-chevron-icon" style="width:14px;height:14px;transition:transform .15s"></i>
+        </td>
+        <td style="font-weight:600;color:var(--txt-1);cursor:pointer;font-family:var(--font-number);font-variant-numeric:tabular-nums">${Utils.escapeHtml(_reconstructedSku(b))}</td>
+        <td class="num">${Utils.formatNumber(b.initial_stock)}</td>
+        <td class="num">${Utils.formatNumber(b.fulfilled_units)}</td>
+        <td class="num" style="font-weight:600;color:${phantom > 0 ? '#dc2626' : 'var(--txt-4)'}">${Utils.formatNumber(phantom)}</td>
+        <td class="num" style="font-weight:600;color:${_remColor(rem)}">${Utils.formatNumber(rem)}</td>
+        <td>${_statusPill(rem, phantom)}</td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.sku-row').forEach(tr => {
+      tr.addEventListener('click', (e) => {
+        if (e.target.closest('.box-drill-row')) return;
+        _toggleBoxDetail(tr);
+      });
+    });
+
+    if (window.lucide) lucide.createIcons();
+
+    const ps = CONFIG.getPageSize();
+    if (info) {
+      const start = ((_page - 1) * ps) + 1;
+      const end   = Math.min(_page * ps, _total);
+      info.textContent = `Showing ${start}–${end} of ${Utils.formatNumber(_total)} boxes`;
+    }
+    Pagination.render('lookup-pagination', _page, Math.ceil(_total / ps), p => { _page = p; _loadDefaultView(); });
+  }
+
+  /* ── Expand a box row: inline field breakdown (no fetch) ── */
+  function _toggleBoxDetail(tr) {
+    const idx     = Number(tr.dataset.idx);
+    const b       = _boxItems[idx];
+    if (!b) return;
+    const nextRow = tr.nextElementSibling;
+    const isOpen  = nextRow?.classList.contains('box-drill-row');
+    const chevron = tr.querySelector('.sku-chevron-icon');
+
+    if (isOpen) {
+      nextRow.remove();
+      if (chevron) chevron.style.transform = '';
+      return;
+    }
+    if (chevron) chevron.style.transform = 'rotate(90deg)';
+
+    const field = (label, value, mono = false) => `
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font-size:10px;font-weight:700;color:var(--txt-4);letter-spacing:.06em;text-transform:uppercase">${label}</span>
+        <span style="font-size:13px;color:var(--txt-1)${mono ? ';font-family:var(--font-number);font-variant-numeric:tabular-nums' : ''}">${value}</span>
+      </div>`;
+
+    const drillTr = document.createElement('tr');
+    drillTr.className = 'box-drill-row';
+    drillTr.innerHTML = `
+      <td colspan="${BOX_COL_COUNT}" style="padding:0;background:#f8fafc;border-top:1px solid var(--border)">
+        <div style="padding:14px 16px 14px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:14px 20px">
+          ${field('Box #',     Utils.escapeHtml(b.box_number || '—'))}
+          ${field('Part #',    Utils.escapeHtml(b.part_number || '—'), true)}
+          ${field('UPC',       Utils.escapeHtml(b.upc || '—'), true)}
+          ${field('Initial',   Utils.formatNumber(b.initial_stock), true)}
+          ${field('Fulfilled', Utils.formatNumber(b.fulfilled_units), true)}
+          ${field('Phantom',   Utils.formatNumber(b.phantom_units), true)}
+          ${field('Remaining', Utils.formatNumber(b.remaining_stock), true)}
+        </div>
+      </td>`;
+    drillTr.addEventListener('click', e => e.stopPropagation());
+    tr.parentNode.insertBefore(drillTr, tr.nextSibling);
   }
 
   function init() {
@@ -272,6 +416,15 @@ const BoxLookup = (() => {
       search('');
     });
 
+    const statusSel = document.getElementById('box-status-filter');
+    if (statusSel) {
+      statusSel.addEventListener('change', () => {
+        _statusFilter = statusSel.value || 'all';
+        _page = 1;
+        _loadDefaultView();
+      });
+    }
+
     if (tabsEl) {
       tabsEl.addEventListener('click', e => {
         const tab = e.target.closest('.lookup-tab')?.dataset.tab;
@@ -289,14 +442,22 @@ const BoxLookup = (() => {
 
   // Clears in-memory state — called by App.resetAllState() on org switch.
   function reset() {
-    _lastData  = null;
-    _activeTab = 'instock';
+    _lastData     = null;
+    _activeTab    = 'instock';
+    _page         = 1;
+    _total        = 0;
+    _statusFilter = 'all';
+    _boxItems     = [];
     const searchInput = document.getElementById('box-search-input');
     if (searchInput) searchInput.value = '';
-    const tabsEl   = document.getElementById('lookup-tabs');
-    const resultsEl = document.getElementById('lookup-results');
-    if (tabsEl)    tabsEl.style.display = 'none';
-    if (resultsEl) resultsEl.innerHTML = '';
+    const statusSel = document.getElementById('box-status-filter');
+    if (statusSel) statusSel.value = 'all';
+    const tabsEl       = document.getElementById('lookup-tabs');
+    const resultsEl    = document.getElementById('lookup-results');
+    const defaultTbody = document.getElementById('lookup-box-tbody');
+    if (tabsEl)       tabsEl.style.display = 'none';
+    if (resultsEl)    resultsEl.innerHTML = '';
+    if (defaultTbody) defaultTbody.innerHTML = '';
   }
 
   return { init, search, reset };

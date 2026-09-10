@@ -210,24 +210,58 @@ export function createLookupRepository({ bq, projectId, logger }) {
     }));
   }
 
+  // Status filter for the default paginated view. Mirrors SKU View's
+  // status filter semantics (in_stock / oos / phantom); 'all' → no filter.
+  function _boxStatusCond(status) {
+    switch (status) {
+      case 'in_stock': return 'AND remaining_stock > 0';
+      case 'oos':      return 'AND remaining_stock = 0 AND phantom_units = 0';
+      case 'phantom':  return 'AND phantom_units > 0';
+      default:         return '';
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────
-  // listAll — every box for the organization, no upc/part filter.
-  // Powers the Box Lookup page's default (pre-search) view. Reads from
-  // box_summary_by_part — its rows are identical to box_summary_by_upc
-  // (both written together on every refresh, just clustered differently
-  // for single-key lookups) so either is a complete per-org box list
-  // when no cluster key is being filtered on.
+  // listAllPaged — one page of every box for the organization, no
+  // upc/part search filter. Powers the Box Lookup page's default
+  // (pre-search) view, which renders a paginated table like SKU View.
+  //
+  // Numeric box_number ordering (ARA1, ARA2 ... ARA10 ... ARA100 — via
+  // SAFE_CAST, non-numeric box values last), with part_number/upc as a
+  // deterministic tiebreak so page boundaries are stable.
+  //
+  // Reads from box_summary_by_part — its rows are identical to
+  // box_summary_by_upc (both written together on every refresh, just
+  // clustered differently for single-key lookups) so either is a
+  // complete per-org box list when no cluster key is being filtered on.
   // ─────────────────────────────────────────────────────────────────
-  async function listAll(organizationId) {
-    const sql = `
+  async function listAllPaged(organizationId, { page = 1, pageSize = 50, status = 'all' } = {}) {
+    const limit  = Math.max(1, Math.min(1000, Number(pageSize) || 50));
+    const offset = Math.max(0, ((Number(page) || 1) - 1) * limit);
+    const cond   = _boxStatusCond(status);
+    const params = { organizationId };
+
+    const dataQuery = `
       SELECT upc, part_number, box_number,
              initial_stock, fulfilled_units, phantom_units, remaining_stock
       FROM ${byPart}
       WHERE organization_id = @organizationId
-      ORDER BY SAFE_CAST(box_number AS INT64) NULLS LAST, box_number
+        ${cond}
+      ORDER BY SAFE_CAST(box_number AS INT64) NULLS LAST, box_number, part_number, upc
+      LIMIT ${limit} OFFSET ${offset}
     `;
-    const [rows] = await bq.query({ query: sql, params: { organizationId } });
-    return _coerceRows(rows);
+    const countQuery = `
+      SELECT COUNT(*) AS total
+      FROM ${byPart}
+      WHERE organization_id = @organizationId
+        ${cond}
+    `;
+
+    const [[rows], [countRows]] = await Promise.all([
+      bq.query({ query: dataQuery,  params }),
+      bq.query({ query: countQuery, params }),
+    ]);
+    return { items: _coerceRows(rows), total: Number(countRows[0]?.total ?? 0) };
   }
 
   async function search(organizationId, query) {
@@ -304,5 +338,5 @@ export function createLookupRepository({ bq, projectId, logger }) {
     return _coerceRows(live);
   }
 
-  return { search, listAll };
+  return { search, listAllPaged };
 }

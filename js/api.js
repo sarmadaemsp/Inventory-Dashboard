@@ -343,6 +343,10 @@ const API = (() => {
 
     /* Lookup */
     async lookup(query) { return _crGet('/lookup', { query }); },
+    // Box Lookup default view — a paginated page of every box for the org
+    // (flat rows + total), numerically ordered by box_number. Blank query
+    // server-side → the listAll branch.
+    async lookupAllBoxes(page = 1, pageSize = CONFIG.PAGE_SIZE, status = 'all') { return _crGet('/lookup', { page, pageSize, status }); },
 
     /* Inventory — SKU View is the canonical inventory page, one row per SKU.
        Backed by the same metrics engine that powers dashboard KPIs. */

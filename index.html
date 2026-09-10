@@ -6,12 +6,12 @@
   <title>Inventory Dashboard</title>
 
   <!-- CSS â€” v=56: bump on every deploy to bust browser/CDN cache -->
-  <link rel="stylesheet" href="css/main.css?v=113">
-  <link rel="stylesheet" href="css/layout.css?v=113">
-  <link rel="stylesheet" href="css/components.css?v=113">
-  <link rel="stylesheet" href="css/tables.css?v=113">
-  <link rel="stylesheet" href="css/forms.css?v=113">
-  <link rel="stylesheet" href="css/animations.css?v=113">
+  <link rel="stylesheet" href="css/main.css?v=114">
+  <link rel="stylesheet" href="css/layout.css?v=114">
+  <link rel="stylesheet" href="css/components.css?v=114">
+  <link rel="stylesheet" href="css/tables.css?v=114">
+  <link rel="stylesheet" href="css/forms.css?v=114">
+  <link rel="stylesheet" href="css/animations.css?v=114">
 
   <!-- Favicon: Lucide "package" icon in brand blue -->
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E">
@@ -302,30 +302,56 @@
                 <i data-lucide="search" class="icon" style="width:14px;height:14px"></i>
               </span>
               <input class="form-input search-input" id="box-search-input"
-                placeholder="Search by Part # or UPC&hellip;" autocomplete="off" style="padding-left:34px">
+                placeholder="Search by SKU, Part #, or UPC&hellip;" autocomplete="off" style="padding-left:34px">
             </div>
+            <select class="form-select" id="box-status-filter" style="width:170px">
+              <option value="all">All Boxes</option>
+              <option value="in_stock">In Stock</option>
+              <option value="oos">Out of Stock</option>
+              <option value="phantom">Phantom (Oversold)</option>
+            </select>
             <button class="btn btn-ghost btn-sm" id="box-clear-btn" style="display:none">
               <i data-lucide="x" class="icon" style="width:13px;height:13px"></i> Clear
             </button>
           </div>
 
-          <!-- Tabs + results area -->
+          <!-- Results area -->
           <div class="blookup-body">
+
+            <!-- Default view: paginated flat table of every box (SKU-View style) -->
+            <div id="lookup-default">
+              <div class="card card-table" style="padding:0;overflow:hidden">
+                <div class="table-wrap" style="border:none;border-radius:0">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th style="width:30px"></th>
+                        <th>SKU</th>
+                        <th class="num">Initial</th>
+                        <th class="num">Fulfilled</th>
+                        <th class="num">Phantom</th>
+                        <th class="num">Remaining</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody id="lookup-box-tbody"></tbody>
+                  </table>
+                </div>
+                <div class="pagination">
+                  <span class="pagination-info" id="lookup-info"></span>
+                  <div id="lookup-pagination"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Search results: nested Part# / UPC cards (unchanged) -->
             <div id="lookup-tabs" style="display:none;margin-bottom:14px">
               <div style="display:flex;gap:0;border-bottom:2px solid var(--border)">
                 <button class="lookup-tab active" data-tab="instock" style="padding:8px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:600;color:var(--primary);border-bottom:2px solid var(--primary);margin-bottom:-2px">In Stock</button>
                 <button class="lookup-tab" data-tab="all" style="padding:8px 18px;border:none;background:none;cursor:pointer;font-size:13px;font-weight:500;color:var(--txt-3)">All Boxes</button>
               </div>
             </div>
-            <div id="lookup-instock">
-              <div class="blookup-empty">
-                <div class="blookup-empty-icon">
-                  <i data-lucide="search" class="icon" style="width:48px;height:48px"></i>
-                </div>
-                <div class="blookup-empty-title">Search your inventory</div>
-                <div class="blookup-empty-sub">Enter a Part Number or UPC above to view inventory allocation across boxes</div>
-              </div>
-            </div>
+            <div id="lookup-instock" style="display:none"></div>
             <div id="lookup-all" style="display:none"></div>
           </div>
 
@@ -676,20 +702,20 @@
 
   <!-- App modules â€” order matters: utilities first, then API/auth, then features, app last -->
   <!-- v=56 â€” bump this number on every deploy to bust browser/CDN cache -->
-  <script src="js/utilities.js?v=113"></script>
-  <script src="js/icons.js?v=113"></script>
-  <script src="js/notifications.js?v=113"></script>
-  <script src="js/loading.js?v=113"></script>
-  <script src="js/api.js?v=113"></script>
-  <script src="js/skuEngine.js?v=113"></script>
-  <script src="js/skuValidator.js?v=113"></script>
-  <script src="js/metricsEngine.js?v=113"></script>
-  <script src="js/auth.js?v=113"></script>
-  <script src="js/dashboard.js?v=113"></script>
-  <script src="js/inventory.js?v=113"></script>
-  <script src="js/orders.js?v=113"></script>
-  <script src="js/uploads.js?v=113"></script>
-  <script src="js/app.js?v=113"></script>
+  <script src="js/utilities.js?v=114"></script>
+  <script src="js/icons.js?v=114"></script>
+  <script src="js/notifications.js?v=114"></script>
+  <script src="js/loading.js?v=114"></script>
+  <script src="js/api.js?v=114"></script>
+  <script src="js/skuEngine.js?v=114"></script>
+  <script src="js/skuValidator.js?v=114"></script>
+  <script src="js/metricsEngine.js?v=114"></script>
+  <script src="js/auth.js?v=114"></script>
+  <script src="js/dashboard.js?v=114"></script>
+  <script src="js/inventory.js?v=114"></script>
+  <script src="js/orders.js?v=114"></script>
+  <script src="js/uploads.js?v=114"></script>
+  <script src="js/app.js?v=114"></script>
 
 </body>
 </html>
