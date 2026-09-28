@@ -31,12 +31,21 @@ function looksLikeUpc(q) {
 const MIN_SKU_FALLBACK_LEN = 3;
 
 // SKU is constructed as ARA{box_number}-{part_number}-{upc} (see
-// skuPatterns.js). box_summary_by_upc/by_part have no `sku` column, but
-// the exact same string can be reconstructed from columns they DO have —
-// no schema change needed. Substring LIKE (not exact equality) so it
-// also tolerates part_number containing its own internal dashes.
+// skuPatterns.js) ONLY when box_number is a plain number. Some items
+// (e.g. "No Box Assigned" placeholders like "NA") have a non-numeric
+// box_number — fabricating "ARA{box_number}-..." for those would
+// produce a string that doesn't match the item's real SKU at all, so
+// the ARA prefix is only added when box_number actually looks numeric;
+// otherwise just part_number-upc is used. box_summary_by_upc/by_part
+// have no `sku` column, but everything needed is reconstructed from
+// columns they DO have — no schema change required. Substring LIKE
+// (not exact equality) so it also tolerates part_number containing its
+// own internal dashes.
 function _reconstructedSkuLikeExpr() {
-  return `LOWER(CONCAT('ARA', box_number, '-', part_number, '-', upc))`;
+  return `LOWER(CASE
+    WHEN REGEXP_CONTAINS(box_number, r'^\\d+$') THEN CONCAT('ARA', box_number, '-', part_number, '-', upc)
+    ELSE CONCAT(part_number, '-', upc)
+  END)`;
 }
 
 export function createLookupRepository({ bq, projectId, logger }) {

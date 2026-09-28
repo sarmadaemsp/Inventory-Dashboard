@@ -297,9 +297,21 @@ const BoxLookup = (() => {
     }
   }
 
-  // SKU is ARA{box_number}-{part_number}-{upc} by construction.
+  // SKU is ARA{box_number}-{part_number}-{upc} by construction, but only
+  // when box_number is a plain number. Non-numeric box_number (e.g. "NA",
+  // a placeholder for items with no box assigned) would otherwise get a
+  // fabricated "ARA{box_number}-..." label that doesn't match the item's
+  // real SKU — show real part/UPC instead and flag it with a "No box"
+  // badge (see _renderBoxTable) rather than lying about the prefix.
+  function _isNumericBox(boxNumber) {
+    return /^\d+$/.test(String(boxNumber ?? '').trim());
+  }
+
   function _reconstructedSku(b) {
-    return `ARA${b.box_number ?? ''}-${b.part_number ?? ''}-${b.upc ?? ''}`;
+    const box = String(b.box_number ?? '').trim();
+    return _isNumericBox(box)
+      ? `ARA${box}-${b.part_number ?? ''}-${b.upc ?? ''}`
+      : `${b.part_number ?? ''}-${b.upc ?? ''}`;
   }
 
   function _renderBoxTable(items, total) {
@@ -325,11 +337,14 @@ const BoxLookup = (() => {
       const phantom = Number(b.phantom_units   ?? 0);
       const rowClass = phantom > 0 ? 'sku-row sku-row--phantom'
                      : (rem === 0 ? 'sku-row sku-row--oos' : 'sku-row');
+      const noBoxBadge = _isNumericBox(b.box_number)
+        ? ''
+        : ' <span style="font-size:10px;background:#f1f5f9;color:var(--txt-3);padding:1px 6px;border-radius:3px;font-weight:600;vertical-align:middle;white-space:nowrap">No box</span>';
       return `<tr class="${rowClass}" data-idx="${idx}">
         <td class="sku-row-chevron" style="text-align:center;color:var(--txt-4);cursor:pointer;user-select:none">
           <i data-lucide="chevron-right" class="icon sku-chevron-icon" style="width:14px;height:14px;transition:transform .15s"></i>
         </td>
-        <td style="font-weight:600;color:var(--txt-1);cursor:pointer;font-family:var(--font-number);font-variant-numeric:tabular-nums">${Utils.escapeHtml(_reconstructedSku(b))}</td>
+        <td style="font-weight:600;color:var(--txt-1);cursor:pointer;font-family:var(--font-number);font-variant-numeric:tabular-nums">${Utils.escapeHtml(_reconstructedSku(b))}${noBoxBadge}</td>
         <td class="num">${Utils.formatNumber(b.initial_stock)}</td>
         <td class="num">${Utils.formatNumber(b.fulfilled_units)}</td>
         <td class="num" style="font-weight:600;color:${phantom > 0 ? '#dc2626' : 'var(--txt-4)'}">${Utils.formatNumber(phantom)}</td>
